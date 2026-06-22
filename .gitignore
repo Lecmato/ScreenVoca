@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+*.spec
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Data (stored in APPDATA per machine)
+*.db
+*.db-journal
+
+# Temp exchange folder — not backed up
+order/
+
+# Logs
+error.log
+*.log
+
+# IDE
+.vscode/
+.idea/
