@@ -40,10 +40,26 @@ function getBack(word: Word, mode: DisplayMode, cardIndex: number): string {
 function speak(text: string) {
   if (!window.speechSynthesis) return
   window.speechSynthesis.cancel()
-  const utt = new SpeechSynthesisUtterance(text)
-  utt.lang = 'en-US'
-  utt.rate = 0.85
-  window.speechSynthesis.speak(utt)
+
+  const fire = (voices: SpeechSynthesisVoice[]) => {
+    const utt = new SpeechSynthesisUtterance(text)
+    utt.lang = 'en-US'
+    utt.rate = 0.85
+    const enVoice = voices.find((v) => v.lang.startsWith('en'))
+    if (enVoice) utt.voice = enVoice
+    window.speechSynthesis.speak(utt)
+  }
+
+  const voices = window.speechSynthesis.getVoices()
+  if (voices.length > 0) {
+    fire(voices)
+  } else {
+    // Firefox loads voices asynchronously
+    window.speechSynthesis.addEventListener('voiceschanged', function handler() {
+      window.speechSynthesis.removeEventListener('voiceschanged', handler)
+      fire(window.speechSynthesis.getVoices())
+    })
+  }
 }
 
 // ── Save-on-exit dialog ─────────────────────────────────────────────────────
@@ -277,7 +293,7 @@ export default function FlashCard() {
       )}
 
       {/* Bottom control bar */}
-      <div className="bg-slate-800/80 backdrop-blur border-t border-slate-700 px-6 py-4 flex items-center gap-3">
+      <div className="bg-slate-800/80 backdrop-blur border-t border-slate-700 px-6 py-4 flex items-center relative">
 
         {/* Left: Exit + hint */}
         <button
@@ -286,30 +302,29 @@ export default function FlashCard() {
         >
           <X size={16} /> Exit
         </button>
-        <span className="text-slate-600 text-xs hidden sm:block">
+        <span className="text-slate-600 text-xs hidden sm:block ml-2">
           Space: 정답 공개 &nbsp;·&nbsp; ← →: 이동
         </span>
 
-        <div className="flex-1" />
+        {/* Center: Prev / Next — absolutely centered so the gap between them is at exact center */}
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
+          <button
+            onClick={goPrev}
+            disabled={index === 0}
+            className="flex items-center gap-1.5 bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-40 transition-colors"
+          >
+            <ChevronLeft size={18} /> Prev
+          </button>
+          <button
+            onClick={goNext}
+            disabled={index === total - 1}
+            className="flex items-center gap-1.5 bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-40 transition-colors"
+          >
+            Next <ChevronRight size={18} />
+          </button>
+        </div>
 
-        {/* Center: Prev / Next */}
-        <button
-          onClick={goPrev}
-          disabled={index === 0}
-          className="p-2.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-30"
-        >
-          <ChevronLeft size={22} />
-        </button>
-
-        <button
-          onClick={goNext}
-          disabled={index === total - 1}
-          className="flex items-center gap-1.5 bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-40 transition-colors"
-        >
-          Next <ChevronRight size={18} />
-        </button>
-
-        <div className="flex-1" />
+        <div className="ml-auto flex items-center gap-3">
 
         {/* Right: utilities */}
 
@@ -391,6 +406,7 @@ export default function FlashCard() {
         >
           <Printer size={18} />
         </button>
+        </div>
       </div>
 
       {/* Dialogs */}
