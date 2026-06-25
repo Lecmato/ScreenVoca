@@ -51,3 +51,58 @@ export interface ParsedVocab {
   sections: string[]
   words: Word[]
 }
+
+// ── Grammar types ────────────────────────────────────────────────────────────
+
+export interface GrammarCategory {
+  id: number
+  code: string
+  name_ko: string
+  parent_id: number | null
+  depth: number
+  sort_order: number
+}
+
+export interface GrammarQuestion {
+  id: number
+  category_code: string
+  error_sentence: string
+  correct_sentence: string
+  error_word: string
+  correct_word: string
+  explanation_ko: string
+  mcq_options: string[] | null
+  difficulty: string
+  is_custom: boolean
+}
+
+export interface GrammarTeacher {
+  id: number
+  name: string
+}
+
+export interface GrammarClass {
+  id: number
+  teacher_id: number
+  name: string
+}
+
+export interface QuizHistoryRecord {
+  id: number
+  class_id: number
+  quiz_date: string
+  question_ids: number[]
+  category_codes: string[]
+  created_at: string
+}
+
+export interface GrammarQuizConfig {
+  teacher: GrammarTeacher | null
+  grammarClass: GrammarClass | null
+  categoryCodes: string[]
+  count: number
+  mcq: boolean
+  displayMode: 'panel' | 'flashcard'
+  timerSeconds: number | null
+  saveHistory: boolean
+}

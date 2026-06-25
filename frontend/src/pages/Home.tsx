@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { BookOpen, Plus, Play, Trash2, Calendar, Clock } from 'lucide-react'
+import { BookOpen, Plus, Play, Trash2, Calendar, Clock, PenLine } from 'lucide-react'
 import { sessionsApi } from '../api/client'
 import { useSessionStore } from '../store/sessionStore'
 import type { SavedSession } from '../types'
@@ -63,13 +63,22 @@ export default function Home() {
           <BookOpen className="text-indigo-600" size={28} />
           <h1 className="text-2xl font-bold text-slate-800">Screen Voca</h1>
         </div>
-        <button
-          onClick={handleNew}
-          className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
-        >
-          <Plus size={18} />
-          새 세션 시작
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate('/grammar/setup')}
+            className="flex items-center gap-2 bg-violet-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-violet-700 transition-colors"
+          >
+            <PenLine size={18} />
+            문법 오답 찾기
+          </button>
+          <button
+            onClick={handleNew}
+            className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+          >
+            <Plus size={18} />
+            새 세션 시작
+          </button>
+        </div>
       </header>
 
       {/* Body */}

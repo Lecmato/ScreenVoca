@@ -31,6 +31,7 @@ from backend.config import STATIC_DIR, PORT
 from backend.database import init_db
 from backend.routers import vocab as vocab_router
 from backend.routers import sessions as sessions_router
+from backend.routers import grammar as grammar_router
 
 # ── FastAPI app ───────────────────────────────────────────────────────────────
 
@@ -45,11 +46,19 @@ app.add_middleware(
 
 app.include_router(vocab_router.router)
 app.include_router(sessions_router.router)
+app.include_router(grammar_router.router)
 
 
 @app.on_event("startup")
 def startup():
+    from backend.database import SessionLocal
+    from backend.grammar_seed import seed_grammar
     init_db()
+    db = SessionLocal()
+    try:
+        seed_grammar(db)
+    finally:
+        db.close()
 
 
 # Serve React build — must be last so API routes take priority

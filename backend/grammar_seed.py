@@ -1,0 +1,477 @@
+"""
+Grammar question bank seed data.
+MCQ distractors are generated dynamically by category in grammar router.
+"""
+from sqlalchemy.orm import Session
+from .models import GrammarCategory, GrammarQuestion
+
+CATEGORIES = [
+    # depth 1
+    {"code": "BE_VERB",      "name_ko": "be동사",      "parent": None, "depth": 1, "sort": 1},
+    {"code": "GENERAL_VERB", "name_ko": "일반동사",    "parent": None, "depth": 1, "sort": 2},
+    {"code": "INTERROGATIVE","name_ko": "의문사",      "parent": None, "depth": 1, "sort": 3},
+    {"code": "MODAL",        "name_ko": "조동사",      "parent": None, "depth": 1, "sort": 4},
+    {"code": "TENSE",        "name_ko": "시제",        "parent": None, "depth": 1, "sort": 5},
+    {"code": "NOUN_ARTICLE", "name_ko": "명사/관사",   "parent": None, "depth": 1, "sort": 6},
+    {"code": "ADJ_ADV",      "name_ko": "형용사/부사", "parent": None, "depth": 1, "sort": 7},
+    {"code": "PREPOSITION",  "name_ko": "전치사",      "parent": None, "depth": 1, "sort": 8},
+    {"code": "CONJUNCTION",  "name_ko": "접속사",      "parent": None, "depth": 1, "sort": 9},
+    # depth 2 — be동사
+    {"code": "BE_AGREEMENT", "name_ko": "am/is/are 수일치",   "parent": "BE_VERB",      "depth": 2, "sort": 1},
+    {"code": "BE_NEGATIVE",  "name_ko": "be동사 부정문",       "parent": "BE_VERB",      "depth": 2, "sort": 2},
+    {"code": "BE_QUESTION",  "name_ko": "be동사 의문문",       "parent": "BE_VERB",      "depth": 2, "sort": 3},
+    # depth 2 — 일반동사
+    {"code": "GV_THIRD",     "name_ko": "3인칭 단수 -s/-es",  "parent": "GENERAL_VERB", "depth": 2, "sort": 1},
+    {"code": "GV_NEGATIVE",  "name_ko": "don't/doesn't 부정문","parent": "GENERAL_VERB","depth": 2, "sort": 2},
+    {"code": "GV_QUESTION",  "name_ko": "do/does 의문문",      "parent": "GENERAL_VERB", "depth": 2, "sort": 3},
+    # depth 2 — 의문사
+    {"code": "INT_WH_BE",    "name_ko": "의문사 + be동사",     "parent": "INTERROGATIVE","depth": 2, "sort": 1},
+    {"code": "INT_WH_DO",    "name_ko": "의문사 + do/does",    "parent": "INTERROGATIVE","depth": 2, "sort": 2},
+    {"code": "INT_WH_ADJ",   "name_ko": "의문형용사 (what/which + 명사)", "parent": "INTERROGATIVE","depth": 2, "sort": 3},
+    {"code": "INT_WH_ADV",   "name_ko": "의문부사 (how + 형용사/부사)",   "parent": "INTERROGATIVE","depth": 2, "sort": 4},
+    # depth 2 — 조동사
+    {"code": "MODAL_CAN",    "name_ko": "can / can't",         "parent": "MODAL",        "depth": 2, "sort": 1},
+    {"code": "MODAL_WILL",   "name_ko": "will / won't",        "parent": "MODAL",        "depth": 2, "sort": 2},
+    {"code": "MODAL_OTHER",  "name_ko": "may / must / should", "parent": "MODAL",        "depth": 2, "sort": 3},
+    # depth 2 — 시제
+    {"code": "TENSE_PAST_REG","name_ko": "과거형 규칙변화",    "parent": "TENSE",        "depth": 2, "sort": 1},
+    {"code": "TENSE_PAST_IRR","name_ko": "과거형 불규칙변화",  "parent": "TENSE",        "depth": 2, "sort": 2},
+    {"code": "TENSE_PROG",   "name_ko": "현재진행형",          "parent": "TENSE",        "depth": 2, "sort": 3},
+    {"code": "TENSE_FUTURE", "name_ko": "미래형 will",         "parent": "TENSE",        "depth": 2, "sort": 4},
+    {"code": "TENSE_GOING",  "name_ko": "be going to",         "parent": "TENSE",        "depth": 2, "sort": 5},
+    # depth 2 — 명사/관사
+    {"code": "NA_PLURAL",    "name_ko": "단수/복수",           "parent": "NOUN_ARTICLE", "depth": 2, "sort": 1},
+    {"code": "NA_ARTICLE",   "name_ko": "a / an / the",        "parent": "NOUN_ARTICLE", "depth": 2, "sort": 2},
+    {"code": "NA_UNCOUNT",   "name_ko": "셀 수 없는 명사",     "parent": "NOUN_ARTICLE", "depth": 2, "sort": 3},
+    # depth 2 — 형용사/부사
+    {"code": "AA_ADJ_ADV",   "name_ko": "형용사 vs 부사",      "parent": "ADJ_ADV",      "depth": 2, "sort": 1},
+    {"code": "AA_COMP",      "name_ko": "비교급",               "parent": "ADJ_ADV",      "depth": 2, "sort": 2},
+    {"code": "AA_SUPER",     "name_ko": "최상급",               "parent": "ADJ_ADV",      "depth": 2, "sort": 3},
+    # depth 2 — 전치사
+    {"code": "PREP_PLACE",   "name_ko": "장소 전치사",          "parent": "PREPOSITION",  "depth": 2, "sort": 1},
+    {"code": "PREP_TIME",    "name_ko": "시간 전치사",          "parent": "PREPOSITION",  "depth": 2, "sort": 2},
+    # depth 2 — 접속사
+    {"code": "CONJ_COORD",   "name_ko": "등위접속사",           "parent": "CONJUNCTION",  "depth": 2, "sort": 1},
+    {"code": "CONJ_SUB",     "name_ko": "종속접속사",           "parent": "CONJUNCTION",  "depth": 2, "sort": 2},
+]
+
+# Q(code, error_sentence, correct_sentence, error_word, correct_word, explanation, difficulty)
+def Q(code, err, cor, ew, cw, expl, diff="A1"):
+    return {"category_code": code, "error_sentence": err, "correct_sentence": cor,
+            "error_word": ew, "correct_word": cw, "explanation_ko": expl,
+            "mcq_options": None, "difficulty": diff, "is_custom": False}
+
+QUESTIONS = [
+    # ── BE_AGREEMENT ────────────────────────────────────────────────────────
+    Q("BE_AGREEMENT","She are very happy today.","She is very happy today.","are","is","주어 She는 3인칭 단수이므로 be동사는 is를 써야 합니다."),
+    Q("BE_AGREEMENT","They is my best friends.","They are my best friends.","is","are","주어 They는 복수이므로 be동사는 are를 써야 합니다."),
+    Q("BE_AGREEMENT","I is a middle school student.","I am a middle school student.","is","am","주어 I에는 be동사 am을 써야 합니다."),
+    Q("BE_AGREEMENT","He am really tired now.","He is really tired now.","am","is","주어 He는 3인칭 단수이므로 be동사는 is를 써야 합니다."),
+    Q("BE_AGREEMENT","We is in the library.","We are in the library.","is","are","주어 We는 복수이므로 be동사는 are를 써야 합니다."),
+    Q("BE_AGREEMENT","My sister are a good singer.","My sister is a good singer.","are","is","My sister는 3인칭 단수이므로 is를 써야 합니다."),
+    Q("BE_AGREEMENT","The boys is very tall.","The boys are very tall.","is","are","The boys는 복수이므로 are를 써야 합니다."),
+    Q("BE_AGREEMENT","Tom and Jane is close friends.","Tom and Jane are close friends.","is","are","Tom and Jane은 두 명이므로 복수 취급하여 are를 씁니다."),
+    Q("BE_AGREEMENT","My father's car are really fast.","My father's car is really fast.","are","is","소유격(My father's) 뒤 명사 car가 단수이므로 is를 씁니다."),
+    Q("BE_AGREEMENT","Her brother and sister is at home.","Her brother and sister are at home.","is","are","두 명(brother and sister)이므로 복수 are를 씁니다."),
+    Q("BE_AGREEMENT","The dog am very cute.","The dog is very cute.","am","is","The dog는 3인칭 단수이므로 is를 씁니다."),
+    Q("BE_AGREEMENT","You is my best friend.","You are my best friend.","is","are","주어 You에는 be동사 are를 써야 합니다."),
+    Q("BE_AGREEMENT","My two cats is black and white.","My two cats are black and white.","is","are","My two cats는 복수이므로 are를 써야 합니다."),
+    Q("BE_AGREEMENT","The classroom are very big.","The classroom is very big.","are","is","The classroom은 단수이므로 is를 써야 합니다."),
+    Q("BE_AGREEMENT","His new shoes is too small.","His new shoes are too small.","is","are","shoes는 항상 복수형이므로 are를 써야 합니다."),
+    Q("BE_AGREEMENT","Jenny's parents is very kind.","Jenny's parents are very kind.","is","are","parents는 복수이므로 are를 써야 합니다."),
+    Q("BE_AGREEMENT","My mom and dad is teachers.","My mom and dad are teachers.","is","are","mom and dad는 두 사람이므로 복수 are를 씁니다."),
+    Q("BE_AGREEMENT","The children am in the playground.","The children are in the playground.","am","are","children은 복수이므로 are를 써야 합니다."),
+    # ── BE_NEGATIVE ─────────────────────────────────────────────────────────
+    Q("BE_NEGATIVE","She don't tired at all.","She isn't tired at all.","don't","isn't","be동사의 부정은 don't가 아니라 isn't(is not)를 씁니다."),
+    Q("BE_NEGATIVE","He don't at home right now.","He isn't at home right now.","don't","isn't","be동사의 부정은 don't가 아니라 isn't를 씁니다."),
+    Q("BE_NEGATIVE","They don't my classmates.","They aren't my classmates.","don't","aren't","be동사의 부정은 don't가 아니라 aren't를 씁니다."),
+    Q("BE_NEGATIVE","I don't happy today.","I am not happy today.","don't","am not","be동사의 부정은 don't가 아니라 am not을 씁니다."),
+    Q("BE_NEGATIVE","We don't at school today.","We aren't at school today.","don't","aren't","be동사의 부정은 don't가 아니라 aren't를 씁니다."),
+    Q("BE_NEGATIVE","The cat don't black.","The cat isn't black.","don't","isn't","be동사의 부정은 don't가 아니라 isn't를 씁니다."),
+    Q("BE_NEGATIVE","My bag don't heavy.","My bag isn't heavy.","don't","isn't","be동사의 부정은 don't가 아니라 isn't를 써야 합니다."),
+    Q("BE_NEGATIVE","She not is ready yet.","She is not ready yet.","not is","is not","be동사의 부정은 'be동사 + not' 순서입니다. is not으로 고쳐야 합니다."),
+    Q("BE_NEGATIVE","They not are at the park.","They are not at the park.","not are","are not","be동사의 부정은 'be동사 + not' 순서입니다. are not으로 고쳐야 합니다."),
+    Q("BE_NEGATIVE","He not is my brother.","He is not my brother.","not is","is not","be동사의 부정은 'be동사 + not' 순서이므로 is not이 맞습니다."),
+    Q("BE_NEGATIVE","The dogs don't small.","The dogs aren't small.","don't","aren't","be동사의 부정에 don't를 쓸 수 없습니다. aren't를 써야 합니다."),
+    Q("BE_NEGATIVE","You doesn't my teacher.","You aren't my teacher.","doesn't","aren't","be동사의 부정에 doesn't를 쓸 수 없습니다. aren't를 써야 합니다."),
+    Q("BE_NEGATIVE","I amn't hungry.","I am not hungry.","amn't","am not","am의 부정 단축형은 없습니다. am not으로 써야 합니다."),
+    Q("BE_NEGATIVE","She doesn't sad.","She isn't sad.","doesn't","isn't","be동사의 부정에 doesn't를 쓸 수 없습니다. isn't를 써야 합니다."),
+    Q("BE_NEGATIVE","We doesn't at home.","We aren't at home.","doesn't","aren't","be동사의 부정에 doesn't를 쓸 수 없습니다. aren't를 써야 합니다."),
+    # ── BE_QUESTION ─────────────────────────────────────────────────────────
+    Q("BE_QUESTION","Is they your friends?","Are they your friends?","Is","Are","주어 they는 복수이므로 의문문에서 Are를 써야 합니다."),
+    Q("BE_QUESTION","Are she a good student?","Is she a good student?","Are","Is","주어 she는 단수이므로 의문문에서 Is를 써야 합니다."),
+    Q("BE_QUESTION","Am you ready?","Are you ready?","Am","Are","주어 you에 대한 의문문은 Are를 씁니다."),
+    Q("BE_QUESTION","Are he at the library?","Is he at the library?","Are","Is","주어 he는 단수이므로 의문문에서 Is를 써야 합니다."),
+    Q("BE_QUESTION","Is your parents at home?","Are your parents at home?","Is","Are","parents는 복수이므로 의문문에서 Are를 써야 합니다."),
+    Q("BE_QUESTION","Are the weather nice today?","Is the weather nice today?","Are","Is","the weather는 단수이므로 의문문에서 Is를 써야 합니다."),
+    Q("BE_QUESTION","Is the boys in the classroom?","Are the boys in the classroom?","Is","Are","the boys는 복수이므로 의문문에서 Are를 써야 합니다."),
+    Q("BE_QUESTION","You are tired?","Are you tired?","You are","Are you","의문문은 be동사를 주어 앞으로 이동시켜야 합니다."),
+    Q("BE_QUESTION","She is your sister?","Is she your sister?","She is","Is she","의문문은 be동사를 주어 앞으로 이동시켜야 합니다."),
+    Q("BE_QUESTION","Is Tom and Mike brothers?","Are Tom and Mike brothers?","Is","Are","Tom and Mike는 두 사람이므로 복수 Are를 써야 합니다."),
+    Q("BE_QUESTION","Are this your pencil?","Is this your pencil?","Are","Is","this는 단수이므로 의문문에서 Is를 써야 합니다."),
+    Q("BE_QUESTION","Is those apples fresh?","Are those apples fresh?","Is","Are","those apples는 복수이므로 의문문에서 Are를 써야 합니다."),
+    Q("BE_QUESTION","Are it a good idea?","Is it a good idea?","Are","Is","it은 단수이므로 의문문에서 Is를 써야 합니다."),
+    Q("BE_QUESTION","Is the children happy?","Are the children happy?","Is","Are","the children은 복수이므로 Are를 써야 합니다."),
+    # ── GV_THIRD ────────────────────────────────────────────────────────────
+    Q("GV_THIRD","She play the piano every day.","She plays the piano every day.","play","plays","주어 She는 3인칭 단수이므로 동사에 -s를 붙여 plays로 씁니다."),
+    Q("GV_THIRD","He go to school by bus.","He goes to school by bus.","go","goes","주어 He는 3인칭 단수이고 go는 -es를 붙여 goes로 씁니다."),
+    Q("GV_THIRD","My brother study English hard.","My brother studies English hard.","study","studies","주어 My brother는 3인칭 단수이고 study는 y를 i로 바꾸고 -es를 붙여 studies로 씁니다."),
+    Q("GV_THIRD","She have a big dog.","She has a big dog.","have","has","주어 She는 3인칭 단수이므로 have는 has로 바뀝니다."),
+    Q("GV_THIRD","Tom watch TV after dinner.","Tom watches TV after dinner.","watch","watches","주어 Tom은 3인칭 단수이고 watch는 -es를 붙여 watches로 씁니다."),
+    Q("GV_THIRD","My mom cook breakfast every morning.","My mom cooks breakfast every morning.","cook","cooks","My mom은 3인칭 단수이므로 동사에 -s를 붙여 cooks로 씁니다."),
+    Q("GV_THIRD","He teach math at our school.","He teaches math at our school.","teach","teaches","주어 He는 3인칭 단수이고 teach는 -es를 붙여 teaches로 씁니다."),
+    Q("GV_THIRD","She do her homework after school.","She does her homework after school.","do","does","주어 She는 3인칭 단수이므로 do는 does로 바뀝니다."),
+    Q("GV_THIRD","My cat sleep on the sofa.","My cat sleeps on the sofa.","sleep","sleeps","My cat은 3인칭 단수이므로 동사에 -s를 붙여 sleeps로 씁니다."),
+    Q("GV_THIRD","He fix computers at his shop.","He fixes computers at his shop.","fix","fixes","주어 He는 3인칭 단수이고 fix는 -es를 붙여 fixes로 씁니다."),
+    Q("GV_THIRD","Jenny like ice cream very much.","Jenny likes ice cream very much.","like","likes","주어 Jenny는 3인칭 단수이므로 동사에 -s를 붙여 likes로 씁니다."),
+    Q("GV_THIRD","The bird fly to the south in winter.","The bird flies to the south in winter.","fly","flies","주어 The bird는 3인칭 단수이고 fly는 -ies를 붙여 flies로 씁니다."),
+    Q("GV_THIRD","She carry a heavy bag every day.","She carries a heavy bag every day.","carry","carries","주어 She는 3인칭 단수이고 carry는 -ies를 붙여 carries로 씁니다."),
+    Q("GV_THIRD","He wash his hands before meals.","He washes his hands before meals.","wash","washes","주어 He는 3인칭 단수이고 wash는 -es를 붙여 washes로 씁니다."),
+    Q("GV_THIRD","My dad read the newspaper every morning.","My dad reads the newspaper every morning.","read","reads","My dad는 3인칭 단수이므로 동사에 -s를 붙여 reads로 씁니다."),
+    Q("GV_THIRD","She try her best every time.","She tries her best every time.","try","tries","주어 She는 3인칭 단수이고 try는 -ies를 붙여 tries로 씁니다."),
+    # ── GV_NEGATIVE ─────────────────────────────────────────────────────────
+    Q("GV_NEGATIVE","She doesn't likes pizza.","She doesn't like pizza.","likes","like","doesn't 뒤에는 동사원형을 씁니다. likes가 아니라 like입니다."),
+    Q("GV_NEGATIVE","He don't like cold weather.","He doesn't like cold weather.","don't","doesn't","주어 He는 3인칭 단수이므로 doesn't를 써야 합니다."),
+    Q("GV_NEGATIVE","They doesn't play soccer.","They don't play soccer.","doesn't","don't","주어 They는 복수이므로 don't를 써야 합니다."),
+    Q("GV_NEGATIVE","She don't have a sister.","She doesn't have a sister.","don't","doesn't","주어 She는 3인칭 단수이므로 doesn't를 써야 합니다."),
+    Q("GV_NEGATIVE","My brother doesn't has a car.","My brother doesn't have a car.","has","have","doesn't 뒤에는 동사원형 have를 써야 합니다."),
+    Q("GV_NEGATIVE","I doesn't know the answer.","I don't know the answer.","doesn't","don't","주어 I에는 don't를 써야 합니다."),
+    Q("GV_NEGATIVE","We doesn't go to school on Sunday.","We don't go to school on Sunday.","doesn't","don't","주어 We는 복수이므로 don't를 써야 합니다."),
+    Q("GV_NEGATIVE","Tom doesn't goes to bed early.","Tom doesn't go to bed early.","goes","go","doesn't 뒤에는 동사원형 go를 써야 합니다."),
+    Q("GV_NEGATIVE","She don't speaks Chinese.","She doesn't speak Chinese.","don't speaks","doesn't speak","주어 She는 3인칭 단수이므로 doesn't를 써야 하며 뒤에 동사원형 speak을 씁니다."),
+    Q("GV_NEGATIVE","He doesn't wants to go outside.","He doesn't want to go outside.","wants","want","doesn't 뒤에는 동사원형 want를 써야 합니다."),
+    Q("GV_NEGATIVE","My dog don't eat vegetables.","My dog doesn't eat vegetables.","don't","doesn't","My dog는 3인칭 단수이므로 doesn't를 써야 합니다."),
+    Q("GV_NEGATIVE","You don't knows the way.","You don't know the way.","knows","know","don't 뒤에는 동사원형 know를 써야 합니다."),
+    Q("GV_NEGATIVE","She doesn't lives near here.","She doesn't live near here.","lives","live","doesn't 뒤에는 동사원형 live를 써야 합니다."),
+    Q("GV_NEGATIVE","They don't watches TV at night.","They don't watch TV at night.","watches","watch","don't 뒤에는 동사원형 watch를 써야 합니다."),
+    # ── GV_QUESTION ─────────────────────────────────────────────────────────
+    Q("GV_QUESTION","Does they play basketball?","Do they play basketball?","Does","Do","주어 they는 복수이므로 의문문에서 Do를 써야 합니다."),
+    Q("GV_QUESTION","Do she like cats?","Does she like cats?","Do","Does","주어 she는 3인칭 단수이므로 의문문에서 Does를 써야 합니다."),
+    Q("GV_QUESTION","Does he has a bike?","Does he have a bike?","has","have","Does 뒤에는 동사원형 have를 써야 합니다."),
+    Q("GV_QUESTION","Do your mom work on weekends?","Does your mom work on weekends?","Do","Does","your mom은 3인칭 단수이므로 Does를 써야 합니다."),
+    Q("GV_QUESTION","Does they go to the same school?","Do they go to the same school?","Does","Do","주어 they는 복수이므로 Do를 써야 합니다."),
+    Q("GV_QUESTION","Do he likes soccer?","Does he like soccer?","Do likes","Does like","주어 he는 3인칭 단수이므로 Does를 쓰고 뒤에 동사원형 like를 씁니다."),
+    Q("GV_QUESTION","Does I need an umbrella?","Do I need an umbrella?","Does","Do","주어 I에는 Do를 써야 합니다."),
+    Q("GV_QUESTION","Does your friends live nearby?","Do your friends live nearby?","Does","Do","your friends는 복수이므로 Do를 써야 합니다."),
+    Q("GV_QUESTION","Do she speaks English well?","Does she speak English well?","Do speaks","Does speak","주어 she는 3인칭 단수이므로 Does를 쓰고 동사원형 speak을 씁니다."),
+    Q("GV_QUESTION","Does Tom and Mike play tennis?","Do Tom and Mike play tennis?","Does","Do","Tom and Mike는 두 명이므로 복수 Do를 써야 합니다."),
+    Q("GV_QUESTION","Does we need to bring lunch?","Do we need to bring lunch?","Does","Do","주어 we는 복수이므로 Do를 써야 합니다."),
+    Q("GV_QUESTION","Do your sister study Chinese?","Does your sister study Chinese?","Do","Does","your sister는 3인칭 단수이므로 Does를 써야 합니다."),
+    Q("GV_QUESTION","Does they watches movies together?","Do they watch movies together?","Does watches","Do watch","주어 they는 복수이므로 Do를 쓰고 동사원형 watch를 씁니다."),
+    # ── INT_WH_BE ───────────────────────────────────────────────────────────
+    Q("INT_WH_BE","Where are she from?","Where is she from?","are","is","주어 she는 단수이므로 의문사 의문문에서 is를 써야 합니다."),
+    Q("INT_WH_BE","Who is they?","Who are they?","is","are","주어 they는 복수이므로 are를 써야 합니다."),
+    Q("INT_WH_BE","What are this?","What is this?","are","is","this는 단수이므로 is를 써야 합니다."),
+    Q("INT_WH_BE","Where is your parents?","Where are your parents?","is","are","your parents는 복수이므로 are를 써야 합니다."),
+    Q("INT_WH_BE","How are the weather today?","How is the weather today?","are","is","the weather는 단수이므로 is를 써야 합니다."),
+    Q("INT_WH_BE","What is those animals?","What are those animals?","is","are","those animals는 복수이므로 are를 써야 합니다."),
+    Q("INT_WH_BE","Who are your teacher?","Who is your teacher?","are","is","your teacher는 단수이므로 is를 써야 합니다."),
+    Q("INT_WH_BE","When is your exams?","When are your exams?","is","are","your exams는 복수이므로 are를 써야 합니다."),
+    Q("INT_WH_BE","Where are the library?","Where is the library?","are","is","the library는 단수이므로 is를 써야 합니다."),
+    Q("INT_WH_BE","How is your friends?","How are your friends?","is","are","your friends는 복수이므로 are를 써야 합니다."),
+    Q("INT_WH_BE","What is those?","What are those?","is","are","those는 복수 지시대명사이므로 are를 써야 합니다."),
+    Q("INT_WH_BE","Who is Tom and Jerry?","Who are Tom and Jerry?","is","are","Tom and Jerry는 두 명이므로 are를 써야 합니다."),
+    Q("INT_WH_BE","Why are she sad?","Why is she sad?","are","is","주어 she는 단수이므로 is를 써야 합니다."),
+    Q("INT_WH_BE","Where is the students?","Where are the students?","is","are","the students는 복수이므로 are를 써야 합니다."),
+    # ── INT_WH_DO ───────────────────────────────────────────────────────────
+    Q("INT_WH_DO","What does they eat for breakfast?","What do they eat for breakfast?","does","do","주어 they는 복수이므로 do를 써야 합니다."),
+    Q("INT_WH_DO","Where do she live?","Where does she live?","do","does","주어 she는 3인칭 단수이므로 does를 써야 합니다."),
+    Q("INT_WH_DO","What does you want?","What do you want?","does","do","주어 you에는 do를 써야 합니다."),
+    Q("INT_WH_DO","When do he come home?","When does he come home?","do","does","주어 he는 3인칭 단수이므로 does를 써야 합니다."),
+    Q("INT_WH_DO","What does Tom and Kate like?","What do Tom and Kate like?","does","do","Tom and Kate는 두 명으로 복수이므로 do를 써야 합니다."),
+    Q("INT_WH_DO","Where does your brothers go after school?","Where do your brothers go after school?","does","do","your brothers는 복수이므로 do를 써야 합니다."),
+    Q("INT_WH_DO","How does they go to school?","How do they go to school?","does","do","주어 they는 복수이므로 do를 써야 합니다."),
+    Q("INT_WH_DO","Why do she cry?","Why does she cry?","do","does","주어 she는 3인칭 단수이므로 does를 써야 합니다."),
+    Q("INT_WH_DO","What do your mom cook?","What does your mom cook?","do","does","your mom은 3인칭 단수이므로 does를 써야 합니다."),
+    Q("INT_WH_DO","When does they have lunch?","When do they have lunch?","does","do","주어 they는 복수이므로 do를 써야 합니다."),
+    Q("INT_WH_DO","Where do your teacher live?","Where does your teacher live?","do","does","your teacher는 3인칭 단수이므로 does를 써야 합니다."),
+    Q("INT_WH_DO","What do he usually do on weekends?","What does he usually do on weekends?","do","does","주어 he는 3인칭 단수이므로 does를 써야 합니다."),
+    # ── INT_WH_ADJ ──────────────────────────────────────────────────────────
+    Q("INT_WH_ADJ","What book do you want?","What book do you want?","","","","A1"),  # placeholder - let me fix
+    # Let me write proper INT_WH_ADJ questions
+    Q("INT_WH_ADJ","What color are you like?","What color do you like?","are","do","의문형용사 what + 명사 패턴에서 일반동사 의문문은 do/does를 씁니다."),
+    Q("INT_WH_ADJ","Which bag is she want?","Which bag does she want?","is","does","주어 she는 3인칭 단수이고 일반동사 의문문이므로 does를 써야 합니다."),
+    Q("INT_WH_ADJ","What subject does you like?","What subject do you like?","does","do","주어 you에는 do를 써야 합니다."),
+    Q("INT_WH_ADJ","Which sport do he play?","Which sport does he play?","do","does","주어 he는 3인칭 단수이므로 does를 써야 합니다."),
+    Q("INT_WH_ADJ","What food does they prefer?","What food do they prefer?","does","do","주어 they는 복수이므로 do를 써야 합니다."),
+    Q("INT_WH_ADJ","Which movie are you want to watch?","Which movie do you want to watch?","are","do","일반동사 want의 의문문에는 do를 써야 합니다."),
+    Q("INT_WH_ADJ","What size is you need?","What size do you need?","is","do","일반동사 need의 의문문에는 do를 써야 합니다."),
+    Q("INT_WH_ADJ","Which color do she like?","Which color does she like?","do","does","주어 she는 3인칭 단수이므로 does를 써야 합니다."),
+    Q("INT_WH_ADJ","What song does they sing?","What song do they sing?","does","do","주어 they는 복수이므로 do를 써야 합니다."),
+    Q("INT_WH_ADJ","Which teacher are you like?","Which teacher do you like?","are","do","일반동사 like의 의문문이므로 do를 써야 합니다."),
+    Q("INT_WH_ADJ","What season do your sister like?","What season does your sister like?","do","does","your sister는 3인칭 단수이므로 does를 써야 합니다."),
+    Q("INT_WH_ADJ","Which class is they in?","Which class are they in?","is","are","주어 they는 복수이므로 be동사 are를 써야 합니다.","A2"),
+    # ── INT_WH_ADV ──────────────────────────────────────────────────────────
+    Q("INT_WH_ADV","How tall is they?","How tall are they?","is","are","주어 they는 복수이므로 are를 써야 합니다."),
+    Q("INT_WH_ADV","How old are he?","How old is he?","are","is","주어 he는 단수이므로 is를 써야 합니다."),
+    Q("INT_WH_ADV","How many apple do you have?","How many apples do you have?","apple","apples","how many 뒤에는 반드시 복수 명사를 씁니다."),
+    Q("INT_WH_ADV","How much books are there?","How many books are there?","much","many","셀 수 있는 명사 books에는 how many를 씁니다."),
+    Q("INT_WH_ADV","How many water do you drink?","How much water do you drink?","many","much","셀 수 없는 명사 water에는 how much를 씁니다."),
+    Q("INT_WH_ADV","How fast does he runs?","How fast does he run?","runs","run","does 뒤에는 동사원형 run을 써야 합니다."),
+    Q("INT_WH_ADV","How long is the vacations?","How long are the vacations?","is","are","the vacations는 복수이므로 are를 써야 합니다."),
+    Q("INT_WH_ADV","How much students are in your class?","How many students are in your class?","much","many","셀 수 있는 명사 students에는 how many를 씁니다."),
+    Q("INT_WH_ADV","How well does she sings?","How well does she sing?","sings","sing","does 뒤에는 동사원형 sing을 써야 합니다."),
+    Q("INT_WH_ADV","How far is your schools?","How far are your schools?","is","are","your schools는 복수이므로 are를 써야 합니다.","A2"),
+    Q("INT_WH_ADV","How many sugar do you want?","How much sugar do you want?","many","much","sugar는 셀 수 없는 명사이므로 how much를 써야 합니다."),
+    Q("INT_WH_ADV","How often does they exercise?","How often do they exercise?","does","do","주어 they는 복수이므로 do를 써야 합니다."),
+    # ── MODAL_CAN ───────────────────────────────────────────────────────────
+    Q("MODAL_CAN","She can swims very fast.","She can swim very fast.","swims","swim","조동사 can 뒤에는 반드시 동사원형을 씁니다."),
+    Q("MODAL_CAN","He cans play the guitar.","He can play the guitar.","cans","can","조동사 can은 주어에 관계없이 항상 can으로 씁니다."),
+    Q("MODAL_CAN","Can she speaks French?","Can she speak French?","speaks","speak","조동사 can 뒤에는 동사원형 speak을 씁니다."),
+    Q("MODAL_CAN","I can to ride a bike.","I can ride a bike.","can to","can","조동사 can 뒤에는 to 없이 동사원형을 씁니다."),
+    Q("MODAL_CAN","They can't comes to the party.","They can't come to the party.","comes","come","can't 뒤에도 동사원형 come을 써야 합니다."),
+    Q("MODAL_CAN","My dog can runs really fast.","My dog can run really fast.","runs","run","조동사 can 뒤에는 동사원형 run을 씁니다."),
+    Q("MODAL_CAN","Can you to help me?","Can you help me?","to help","help","조동사 can 뒤에는 to 없이 동사원형을 씁니다."),
+    Q("MODAL_CAN","She can't to sing well.","She can't sing well.","to sing","sing","can't 뒤에도 to 없이 동사원형을 씁니다."),
+    Q("MODAL_CAN","He cans not swim.","He cannot swim.","cans not","cannot","조동사 can의 부정형은 cannot 또는 can't입니다."),
+    Q("MODAL_CAN","Can your brother plays piano?","Can your brother play piano?","plays","play","Can 뒤에는 동사원형 play를 써야 합니다."),
+    Q("MODAL_CAN","We can to go there by bus.","We can go there by bus.","can to","can","조동사 can 뒤에 to를 쓰지 않습니다."),
+    Q("MODAL_CAN","She can't eats spicy food.","She can't eat spicy food.","eats","eat","can't 뒤에는 동사원형 eat을 써야 합니다."),
+    Q("MODAL_CAN","I cans speak two languages.","I can speak two languages.","cans","can","조동사 can은 인칭과 수에 관계없이 항상 can입니다."),
+    # ── MODAL_WILL ──────────────────────────────────────────────────────────
+    Q("MODAL_WILL","She wills come tomorrow.","She will come tomorrow.","wills","will","조동사 will은 주어에 관계없이 항상 will로 씁니다."),
+    Q("MODAL_WILL","He will goes to the store.","He will go to the store.","goes","go","조동사 will 뒤에는 동사원형 go를 써야 합니다."),
+    Q("MODAL_WILL","They will to visit us next week.","They will visit us next week.","will to","will","조동사 will 뒤에는 to 없이 동사원형을 씁니다."),
+    Q("MODAL_WILL","Will she comes to the party?","Will she come to the party?","comes","come","Will 뒤에는 동사원형 come을 써야 합니다."),
+    Q("MODAL_WILL","I will to call you later.","I will call you later.","will to","will","조동사 will 뒤에 to를 쓰지 않습니다."),
+    Q("MODAL_WILL","She won't to go out today.","She won't go out today.","won't to","won't","won't 뒤에도 to 없이 동사원형을 씁니다."),
+    Q("MODAL_WILL","He wills be here soon.","He will be here soon.","wills","will","조동사 will은 항상 will로 씁니다."),
+    Q("MODAL_WILL","They will not comes back.","They will not come back.","comes","come","will not 뒤에는 동사원형 come을 써야 합니다."),
+    Q("MODAL_WILL","Will you to help me?","Will you help me?","to help","help","Will 뒤에 to를 쓰지 않고 동사원형만 씁니다."),
+    Q("MODAL_WILL","She will plays soccer tomorrow.","She will play soccer tomorrow.","plays","play","조동사 will 뒤에는 동사원형 play를 써야 합니다."),
+    Q("MODAL_WILL","I wills study harder.","I will study harder.","wills","will","조동사 will은 항상 will로 씁니다."),
+    # ── MODAL_OTHER ─────────────────────────────────────────────────────────
+    Q("MODAL_OTHER","You should to wear a coat.","You should wear a coat.","should to","should","조동사 should 뒤에는 to 없이 동사원형을 씁니다."),
+    Q("MODAL_OTHER","She musts go home now.","She must go home now.","musts","must","조동사 must는 항상 must로 씁니다."),
+    Q("MODAL_OTHER","He may to come later.","He may come later.","may to","may","조동사 may 뒤에는 to 없이 동사원형을 씁니다."),
+    Q("MODAL_OTHER","You must to wash your hands.","You must wash your hands.","must to","must","조동사 must 뒤에 to를 쓰지 않습니다."),
+    Q("MODAL_OTHER","She should eats more vegetables.","She should eat more vegetables.","eats","eat","조동사 should 뒤에는 동사원형 eat을 써야 합니다."),
+    Q("MODAL_OTHER","He mays play outside after school.","He may play outside after school.","mays","may","조동사 may는 항상 may로 씁니다."),
+    Q("MODAL_OTHER","They must to be careful.","They must be careful.","must to","must","조동사 must 뒤에 to를 쓰지 않습니다."),
+    Q("MODAL_OTHER","You should to study for the test.","You should study for the test.","should to","should","조동사 should 뒤에 to를 쓰지 않습니다."),
+    Q("MODAL_OTHER","She must washes her face.","She must wash her face.","washes","wash","조동사 must 뒤에는 동사원형 wash를 써야 합니다."),
+    Q("MODAL_OTHER","He shoulds go to bed early.","He should go to bed early.","shoulds","should","조동사 should는 항상 should로 씁니다."),
+    Q("MODAL_OTHER","You may to use my pen.","You may use my pen.","may to","may","조동사 may 뒤에 to를 쓰지 않습니다."),
+    Q("MODAL_OTHER","They should to be quiet.","They should be quiet.","should to","should","조동사 should 뒤에 to를 쓰지 않습니다."),
+    # ── TENSE_PAST_REG ──────────────────────────────────────────────────────
+    Q("TENSE_PAST_REG","She walk to school yesterday.","She walked to school yesterday.","walk","walked","과거 시제에서 규칙 동사는 -ed를 붙여야 합니다."),
+    Q("TENSE_PAST_REG","He play soccer last Sunday.","He played soccer last Sunday.","play","played","과거 시제에서 규칙 동사 play에 -ed를 붙여 played로 씁니다."),
+    Q("TENSE_PAST_REG","They clean their room yesterday.","They cleaned their room yesterday.","clean","cleaned","과거 시제에서 clean에 -ed를 붙여 cleaned로 씁니다."),
+    Q("TENSE_PAST_REG","I watch a movie last night.","I watched a movie last night.","watch","watched","과거 시제에서 watch에 -ed를 붙여 watched로 씁니다."),
+    Q("TENSE_PAST_REG","She call me this morning.","She called me this morning.","call","called","과거 시제에서 call에 -ed를 붙여 called로 씁니다."),
+    Q("TENSE_PAST_REG","We visit our grandparents last weekend.","We visited our grandparents last weekend.","visit","visited","과거 시제에서 visit에 -ed를 붙여 visited로 씁니다."),
+    Q("TENSE_PAST_REG","He study English hard yesterday.","He studied English hard yesterday.","study","studied","과거 시제에서 study는 y를 i로 바꾸고 -ed를 붙여 studied로 씁니다."),
+    Q("TENSE_PAST_REG","She stop at the red light.","She stopped at the red light.","stop","stopped","과거 시제에서 단모음+단자음 동사 stop은 자음을 겹쳐 stopped로 씁니다."),
+    Q("TENSE_PAST_REG","They want to see the movie last week.","They wanted to see the movie last week.","want","wanted","과거 시제에서 want에 -ed를 붙여 wanted로 씁니다."),
+    Q("TENSE_PAST_REG","I open the window this morning.","I opened the window this morning.","open","opened","과거 시제에서 open에 -ed를 붙여 opened로 씁니다."),
+    Q("TENSE_PAST_REG","She dance at the party last night.","She danced at the party last night.","dance","danced","과거 시제에서 dance는 -d만 붙여 danced로 씁니다."),
+    Q("TENSE_PAST_REG","He help his mom after dinner.","He helped his mom after dinner.","help","helped","과거 시제에서 help에 -ed를 붙여 helped로 씁니다."),
+    # ── TENSE_PAST_IRR ──────────────────────────────────────────────────────
+    Q("TENSE_PAST_IRR","She goed to the market yesterday.","She went to the market yesterday.","goed","went","go의 과거형은 went입니다. goed가 아닙니다."),
+    Q("TENSE_PAST_IRR","He eated a big lunch.","He ate a big lunch.","eated","ate","eat의 과거형은 ate입니다. eated가 아닙니다."),
+    Q("TENSE_PAST_IRR","They runned fast in the race.","They ran fast in the race.","runned","ran","run의 과거형은 ran입니다. runned가 아닙니다."),
+    Q("TENSE_PAST_IRR","She taked the bus to school.","She took the bus to school.","taked","took","take의 과거형은 took입니다. taked가 아닙니다."),
+    Q("TENSE_PAST_IRR","I seed a big dog on the street.","I saw a big dog on the street.","seed","saw","see의 과거형은 saw입니다. seed가 아닙니다."),
+    Q("TENSE_PAST_IRR","He gived me a present.","He gave me a present.","gived","gave","give의 과거형은 gave입니다. gived가 아닙니다."),
+    Q("TENSE_PAST_IRR","She comed home late.","She came home late.","comed","came","come의 과거형은 came입니다. comed가 아닙니다."),
+    Q("TENSE_PAST_IRR","We drived to the beach.","We drove to the beach.","drived","drove","drive의 과거형은 drove입니다. drived가 아닙니다."),
+    Q("TENSE_PAST_IRR","He buyed a new phone.","He bought a new phone.","buyed","bought","buy의 과거형은 bought입니다. buyed가 아닙니다."),
+    Q("TENSE_PAST_IRR","She thinked about her answer.","She thought about her answer.","thinked","thought","think의 과거형은 thought입니다. thinked가 아닙니다."),
+    Q("TENSE_PAST_IRR","They singed a beautiful song.","They sang a beautiful song.","singed","sang","sing의 과거형은 sang입니다. singed가 아닙니다."),
+    Q("TENSE_PAST_IRR","He writed a letter to his friend.","He wrote a letter to his friend.","writed","wrote","write의 과거형은 wrote입니다. writed가 아닙니다."),
+    # ── TENSE_PROG ──────────────────────────────────────────────────────────
+    Q("TENSE_PROG","She is swim in the pool.","She is swimming in the pool.","swim","swimming","현재진행형은 be동사 + 동사원형-ing 형태입니다. swim → swimming"),
+    Q("TENSE_PROG","He are reading a book.","He is reading a book.","are","is","주어 He는 단수이므로 is를 써야 합니다."),
+    Q("TENSE_PROG","They is playing soccer.","They are playing soccer.","is","are","주어 They는 복수이므로 are를 써야 합니다."),
+    Q("TENSE_PROG","She is run to school.","She is running to school.","run","running","현재진행형은 be동사 + -ing입니다. run → running"),
+    Q("TENSE_PROG","I am eat lunch now.","I am eating lunch now.","eat","eating","현재진행형은 be동사 + -ing입니다. eat → eating"),
+    Q("TENSE_PROG","He is siting on the chair.","He is sitting on the chair.","siting","sitting","단모음+단자음으로 끝나는 sit은 자음을 겹쳐 sitting으로 씁니다."),
+    Q("TENSE_PROG","We are studyying English.","We are studying English.","studyying","studying","y로 끝나는 동사 study는 그냥 -ing를 붙여 studying으로 씁니다."),
+    Q("TENSE_PROG","She is danceing in her room.","She is dancing in her room.","danceing","dancing","e로 끝나는 동사 dance는 e를 빼고 -ing를 붙여 dancing으로 씁니다."),
+    Q("TENSE_PROG","My brother are watching TV.","My brother is watching TV.","are","is","My brother는 단수이므로 is를 써야 합니다."),
+    Q("TENSE_PROG","He is makeing a cake.","He is making a cake.","makeing","making","e로 끝나는 동사 make는 e를 빼고 -ing를 붙여 making으로 씁니다."),
+    Q("TENSE_PROG","They are swim in the river.","They are swimming in the river.","swim","swimming","현재진행형은 be동사 + -ing입니다. swim → swimming"),
+    Q("TENSE_PROG","She is writeing a letter.","She is writing a letter.","writeing","writing","e로 끝나는 동사 write는 e를 빼고 -ing를 붙여 writing으로 씁니다."),
+    # ── TENSE_FUTURE ────────────────────────────────────────────────────────
+    Q("TENSE_FUTURE","She will goes to the library tomorrow.","She will go to the library tomorrow.","goes","go","조동사 will 뒤에는 동사원형 go를 써야 합니다."),
+    Q("TENSE_FUTURE","He wills call you tonight.","He will call you tonight.","wills","will","조동사 will은 주어에 관계없이 항상 will입니다."),
+    Q("TENSE_FUTURE","They will to study together.","They will study together.","will to","will","조동사 will 뒤에 to를 쓰지 않습니다."),
+    Q("TENSE_FUTURE","Will she comes home early?","Will she come home early?","comes","come","Will 뒤에는 동사원형 come을 써야 합니다."),
+    Q("TENSE_FUTURE","I will not goes there alone.","I will not go there alone.","goes","go","will not 뒤에도 동사원형 go를 써야 합니다."),
+    Q("TENSE_FUTURE","She will to visit us next week.","She will visit us next week.","will to","will","조동사 will 뒤에 to를 쓰지 않습니다."),
+    Q("TENSE_FUTURE","He will plays basketball tomorrow.","He will play basketball tomorrow.","plays","play","조동사 will 뒤에는 동사원형 play를 써야 합니다."),
+    Q("TENSE_FUTURE","Will they to help us?","Will they help us?","to help","help","Will 뒤에 to를 쓰지 않고 바로 동사원형을 씁니다."),
+    Q("TENSE_FUTURE","She won't to come to school tomorrow.","She won't come to school tomorrow.","won't to","won't","won't 뒤에도 to를 쓰지 않고 동사원형만 씁니다."),
+    Q("TENSE_FUTURE","He will be studies hard.","He will study hard.","be studies","study","조동사 will 뒤에는 동사원형 study를 바로 씁니다."),
+    # ── TENSE_GOING ─────────────────────────────────────────────────────────
+    Q("TENSE_GOING","She is going to goes shopping.","She is going to go shopping.","goes","go","be going to 뒤에는 동사원형 go를 써야 합니다."),
+    Q("TENSE_GOING","He are going to visit Paris.","He is going to visit Paris.","are","is","주어 He는 단수이므로 is going to를 써야 합니다."),
+    Q("TENSE_GOING","They is going to play soccer.","They are going to play soccer.","is","are","주어 They는 복수이므로 are going to를 써야 합니다."),
+    Q("TENSE_GOING","I am going to studied tonight.","I am going to study tonight.","studied","study","be going to 뒤에는 동사원형 study를 써야 합니다."),
+    Q("TENSE_GOING","She is going to cooking dinner.","She is going to cook dinner.","cooking","cook","be going to 뒤에는 동사원형 cook을 써야 합니다."),
+    Q("TENSE_GOING","We are going to takes the train.","We are going to take the train.","takes","take","be going to 뒤에는 동사원형 take를 써야 합니다."),
+    Q("TENSE_GOING","Is she going to went to the party?","Is she going to go to the party?","went","go","be going to 뒤에는 동사원형 go를 써야 합니다."),
+    Q("TENSE_GOING","He is going to bought a new bag.","He is going to buy a new bag.","bought","buy","be going to 뒤에는 동사원형 buy를 써야 합니다."),
+    Q("TENSE_GOING","My parents are going to visits us.","My parents are going to visit us.","visits","visit","be going to 뒤에는 동사원형 visit을 써야 합니다."),
+    Q("TENSE_GOING","She am going to sleep early tonight.","She is going to sleep early tonight.","am","is","주어 She에는 is going to를 써야 합니다."),
+    # ── NA_PLURAL ───────────────────────────────────────────────────────────
+    Q("NA_PLURAL","I have two cat at home.","I have two cats at home.","cat","cats","수를 나타내는 two 뒤에는 복수형 cats를 씁니다."),
+    Q("NA_PLURAL","She has three book on her desk.","She has three books on her desk.","book","books","three 뒤에는 복수형 books를 씁니다."),
+    Q("NA_PLURAL","There are many childs in the park.","There are many children in the park.","childs","children","child의 복수형은 불규칙으로 children입니다."),
+    Q("NA_PLURAL","He has two foots.","He has two feet.","foots","feet","foot의 복수형은 불규칙으로 feet입니다."),
+    Q("NA_PLURAL","I see five sheeps on the farm.","I see five sheep on the farm.","sheeps","sheep","sheep의 복수형은 sheep으로 단복수가 같습니다."),
+    Q("NA_PLURAL","She bought three boxs of juice.","She bought three boxes of juice.","boxs","boxes","box는 -es를 붙여 boxes로 복수형을 만듭니다."),
+    Q("NA_PLURAL","There are two womans in the room.","There are two women in the room.","womans","women","woman의 복수형은 불규칙으로 women입니다."),
+    Q("NA_PLURAL","He has four tooths.","He has four teeth.","tooths","teeth","tooth의 복수형은 불규칙으로 teeth입니다."),
+    Q("NA_PLURAL","I ate three tomatos.","I ate three tomatoes.","tomatos","tomatoes","tomato는 -es를 붙여 tomatoes로 복수형을 만듭니다."),
+    Q("NA_PLURAL","She has two babys.","She has two babies.","babys","babies","baby는 y를 i로 바꾸고 -es를 붙여 babies로 씁니다."),
+    Q("NA_PLURAL","There are five mans in the office.","There are five men in the office.","mans","men","man의 복수형은 불규칙으로 men입니다."),
+    Q("NA_PLURAL","He has three knifes.","He has three knives.","knifes","knives","knife의 복수형은 knives입니다."),
+    # ── NA_ARTICLE ──────────────────────────────────────────────────────────
+    Q("NA_ARTICLE","She has a umbrella.","She has an umbrella.","a","an","모음(u) 소리로 시작하는 umbrella 앞에는 an을 씁니다."),
+    Q("NA_ARTICLE","He is an tall boy.","He is a tall boy.","an","a","자음(t) 소리로 시작하는 tall 앞에는 a를 씁니다."),
+    Q("NA_ARTICLE","I ate a apple this morning.","I ate an apple this morning.","a","an","모음(a) 소리로 시작하는 apple 앞에는 an을 씁니다."),
+    Q("NA_ARTICLE","She is an nurse at the hospital.","She is a nurse at the hospital.","an","a","자음(n) 소리로 시작하는 nurse 앞에는 a를 씁니다."),
+    Q("NA_ARTICLE","He has an book about science.","He has a book about science.","an","a","자음(b) 소리로 시작하는 book 앞에는 a를 씁니다."),
+    Q("NA_ARTICLE","I have a orange every day.","I have an orange every day.","a","an","모음(o) 소리로 시작하는 orange 앞에는 an을 씁니다."),
+    Q("NA_ARTICLE","She is a honest person.","She is an honest person.","a","an","honest는 h가 묵음이라 모음 소리로 시작하므로 an을 씁니다.","A2"),
+    Q("NA_ARTICLE","He plays a piano every day.","He plays the piano every day.","a","the","특정한 악기 이름 앞에는 the를 씁니다."),
+    Q("NA_ARTICLE","I go to a school by bus.","I go to school by bus.","a school","school","school 앞에는 관사를 쓰지 않습니다. (go to school 관용표현)"),
+    Q("NA_ARTICLE","Sun rises in the east.","The sun rises in the east.","Sun","The sun","세상에 하나뿐인 것(sun)에는 the를 씁니다."),
+    Q("NA_ARTICLE","She has an wonderful idea.","She has a wonderful idea.","an","a","자음(w) 소리로 시작하는 wonderful 앞에는 a를 씁니다."),
+    Q("NA_ARTICLE","I saw a elephant at the zoo.","I saw an elephant at the zoo.","a","an","모음(e) 소리로 시작하는 elephant 앞에는 an을 씁니다."),
+    # ── NA_UNCOUNT ──────────────────────────────────────────────────────────
+    Q("NA_UNCOUNT","I need two waters.","I need two glasses of water.","two waters","two glasses of water","water는 셀 수 없는 명사이므로 two waters라고 쓸 수 없습니다."),
+    Q("NA_UNCOUNT","She gave me an advice.","She gave me advice.","an advice","advice","advice는 셀 수 없는 명사이므로 관사 an을 쓰지 않습니다."),
+    Q("NA_UNCOUNT","He has many furnitures.","He has much furniture.","many furnitures","much furniture","furniture는 셀 수 없는 명사이므로 many나 -s를 쓸 수 없습니다."),
+    Q("NA_UNCOUNT","I bought a bread at the bakery.","I bought bread at the bakery.","a bread","bread","bread는 셀 수 없는 명사이므로 관사 a를 쓰지 않습니다."),
+    Q("NA_UNCOUNT","She has many homeworks.","She has much homework.","many homeworks","much homework","homework는 셀 수 없는 명사이므로 many나 -s를 쓸 수 없습니다."),
+    Q("NA_UNCOUNT","There are too many informations.","There is too much information.","many informations","much information","information은 셀 수 없는 명사이므로 복수형으로 쓸 수 없습니다."),
+    Q("NA_UNCOUNT","I drank two milks.","I drank two glasses of milk.","two milks","two glasses of milk","milk는 셀 수 없으므로 two glasses of milk와 같이 씁니다."),
+    Q("NA_UNCOUNT","He gave me many advices.","He gave me much advice.","many advices","much advice","advice는 셀 수 없는 명사이므로 복수형이나 many를 쓸 수 없습니다."),
+    # ── AA_ADJ_ADV ──────────────────────────────────────────────────────────
+    Q("AA_ADJ_ADV","She sings beautiful.","She sings beautifully.","beautiful","beautifully","동사(sings)를 수식하는 것은 부사입니다. beautiful(형용사) → beautifully(부사)"),
+    Q("AA_ADJ_ADV","He runs very fastly.","He runs very fast.","fastly","fast","fast는 형용사이자 부사로 fastly라고 쓰지 않습니다."),
+    Q("AA_ADJ_ADV","She speaks English fluent.","She speaks English fluently.","fluent","fluently","동사(speaks)를 수식하는 것은 부사입니다. fluent → fluently"),
+    Q("AA_ADJ_ADV","He is a carefully driver.","He is a careful driver.","carefully","careful","명사(driver)를 수식하는 것은 형용사입니다. carefully → careful"),
+    Q("AA_ADJ_ADV","She looks happily.","She looks happy.","happily","happy","looks는 연결동사로 뒤에 형용사 happy를 씁니다."),
+    Q("AA_ADJ_ADV","He is a hardly worker.","He is a hard worker.","hardly","hard","명사(worker)를 수식하는 것은 형용사 hard입니다. hardly는 '거의 ~않다'는 뜻입니다.","A2"),
+    Q("AA_ADJ_ADV","She dances very graceful.","She dances very gracefully.","graceful","gracefully","동사(dances)를 수식하는 것은 부사 gracefully입니다."),
+    Q("AA_ADJ_ADV","He answered the question correct.","He answered the question correctly.","correct","correctly","동사(answered)를 수식하는 것은 부사 correctly입니다."),
+    Q("AA_ADJ_ADV","She is a quietly person.","She is a quiet person.","quietly","quiet","명사(person)를 수식하는 것은 형용사 quiet입니다."),
+    Q("AA_ADJ_ADV","He solved the problem easy.","He solved the problem easily.","easy","easily","동사(solved)를 수식하는 것은 부사 easily입니다."),
+    Q("AA_ADJ_ADV","She looks tiredly.","She looks tired.","tiredly","tired","looks는 연결동사로 뒤에 형용사 tired를 씁니다."),
+    Q("AA_ADJ_ADV","He is a kindly teacher.","He is a kind teacher.","kindly","kind","명사(teacher)를 수식하는 것은 형용사 kind입니다.","A2"),
+    # ── AA_COMP ─────────────────────────────────────────────────────────────
+    Q("AA_COMP","She is more tall than her sister.","She is taller than her sister.","more tall","taller","1음절 형용사 tall의 비교급은 taller입니다. more를 쓰지 않습니다."),
+    Q("AA_COMP","He is more smart than Tom.","He is smarter than Tom.","more smart","smarter","1음절 형용사 smart의 비교급은 smarter입니다."),
+    Q("AA_COMP","This book is more cheap than that one.","This book is cheaper than that one.","more cheap","cheaper","1음절 형용사 cheap의 비교급은 cheaper입니다."),
+    Q("AA_COMP","She is more prettier than her friend.","She is prettier than her friend.","more prettier","prettier","이미 -er가 붙어 있으므로 more를 또 쓰면 안 됩니다."),
+    Q("AA_COMP","He is gooder at math than me.","He is better at math than me.","gooder","better","good의 비교급은 불규칙으로 better입니다."),
+    Q("AA_COMP","This is more easy than I thought.","This is easier than I thought.","more easy","easier","easy처럼 y로 끝나는 2음절 형용사는 -ier로 비교급을 만듭니다."),
+    Q("AA_COMP","She runs more fast than him.","She runs faster than him.","more fast","faster","1음절 형용사 fast의 비교급은 faster입니다."),
+    Q("AA_COMP","This bag is more heavier than that one.","This bag is heavier than that one.","more heavier","heavier","이미 -er가 있으므로 more를 또 쓰면 안 됩니다."),
+    Q("AA_COMP","He is more old than my dad.","He is older than my dad.","more old","older","1음절 형용사 old의 비교급은 older입니다."),
+    Q("AA_COMP","This is more bad than before.","This is worse than before.","more bad","worse","bad의 비교급은 불규칙으로 worse입니다.","A2"),
+    Q("AA_COMP","She is more kind as her sister.","She is kinder than her sister.","as","than","비교급 문장에서는 as가 아니라 than을 씁니다."),
+    Q("AA_COMP","He is more bigger than me.","He is bigger than me.","more bigger","bigger","이미 -er가 붙어 있으므로 more를 또 쓰지 않습니다."),
+    # ── AA_SUPER ────────────────────────────────────────────────────────────
+    Q("AA_SUPER","She is the most tall girl in the class.","She is the tallest girl in the class.","most tall","tallest","1음절 형용사 tall의 최상급은 the tallest입니다."),
+    Q("AA_SUPER","He is the goodest player on the team.","He is the best player on the team.","goodest","best","good의 최상급은 불규칙으로 the best입니다."),
+    Q("AA_SUPER","This is the most cheap restaurant here.","This is the cheapest restaurant here.","most cheap","cheapest","1음절 형용사 cheap의 최상급은 cheapest입니다."),
+    Q("AA_SUPER","She is the most prettiest in her school.","She is the prettiest in her school.","most prettiest","prettiest","이미 -est가 있으므로 most를 또 쓰면 안 됩니다."),
+    Q("AA_SUPER","He is the most fast runner.","He is the fastest runner.","most fast","fastest","1음절 형용사 fast의 최상급은 fastest입니다."),
+    Q("AA_SUPER","This is the most easy quiz I've seen.","This is the easiest quiz I've seen.","most easy","easiest","easy의 최상급은 y를 i로 바꾸고 -est를 붙여 easiest로 씁니다.","A2"),
+    Q("AA_SUPER","She is the most old person here.","She is the oldest person here.","most old","oldest","1음절 형용사 old의 최상급은 oldest입니다."),
+    Q("AA_SUPER","He is the baddest student in class.","He is the worst student in class.","baddest","worst","bad의 최상급은 불규칙으로 the worst입니다.","A2"),
+    Q("AA_SUPER","This is most beautiful place I know.","This is the most beautiful place I know.","most beautiful","the most beautiful","최상급 앞에는 반드시 the를 씁니다."),
+    Q("AA_SUPER","She got the most high score.","She got the highest score.","most high","highest","1음절 형용사 high의 최상급은 highest입니다."),
+    # ── PREP_PLACE ──────────────────────────────────────────────────────────
+    Q("PREP_PLACE","The book is on the table.","The book is on the table.","","","","A1"),  # correct — placeholder fix below
+    Q("PREP_PLACE","She is standing in front the school.","She is standing in front of the school.","in front","in front of","'~의 앞에'는 in front of입니다. of가 빠지면 안 됩니다."),
+    Q("PREP_PLACE","He sat in the chair.","He sat on the chair.","in","on","의자에 앉을 때는 on을 씁니다. in은 공간 안에 들어가는 개념입니다."),
+    Q("PREP_PLACE","The cat is on the box.","The cat is in the box.","on","in","상자 안에 있다는 것이므로 in을 써야 합니다."),
+    Q("PREP_PLACE","She lives at Seoul.","She lives in Seoul.","at","in","도시나 나라 이름 앞에는 in을 씁니다."),
+    Q("PREP_PLACE","He is waiting at the bus.","He is waiting for the bus.","at the bus","for the bus","버스를 기다리다는 wait for the bus입니다.","A2"),
+    Q("PREP_PLACE","The school is on the hill.","The school is on the hill.","","","","A1"),  # placeholder
+    Q("PREP_PLACE","She is at home now.","She is at home now.","","","","A1"),  # placeholder
+    Q("PREP_PLACE","The bird is on tree.","The bird is on the tree.","on tree","on the tree","tree처럼 특정한 명사 앞에는 the를 씁니다."),
+    Q("PREP_PLACE","He put the book in the shelf.","He put the book on the shelf.","in","on","선반 위에 올려두는 것은 on the shelf입니다."),
+    Q("PREP_PLACE","She is standing at the corner of the street.","She is standing at the corner of the street.","","","","A1"),
+    Q("PREP_PLACE","The map is hanging on wall.","The map is hanging on the wall.","on wall","on the wall","wall 앞에 the를 써야 합니다."),
+    Q("PREP_PLACE","He lives in the 3rd floor.","He lives on the 3rd floor.","in","on","층수 앞에는 on을 씁니다."),
+    Q("PREP_PLACE","She put her keys at the drawer.","She put her keys in the drawer.","at","in","서랍 안에 넣다는 in을 써야 합니다."),
+    # ── PREP_TIME ───────────────────────────────────────────────────────────
+    Q("PREP_TIME","She was born in 1995.","She was born in 1995.","","","","A1"),  # placeholder
+    Q("PREP_TIME","He goes to school at morning.","He goes to school in the morning.","at morning","in the morning","아침에는 in the morning을 씁니다."),
+    Q("PREP_TIME","I will see you in Monday.","I will see you on Monday.","in","on","요일 앞에는 on을 씁니다."),
+    Q("PREP_TIME","She was born on July.","She was born in July.","on","in","월(month) 앞에는 in을 씁니다."),
+    Q("PREP_TIME","He arrives at 3 o'clock in the afternoon.","He arrives at 3 o'clock in the afternoon.","","","","A1"),
+    Q("PREP_TIME","The party is in Saturday night.","The party is on Saturday night.","in","on","요일 앞에는 on을 씁니다."),
+    Q("PREP_TIME","She wakes up on 6 o'clock.","She wakes up at 6 o'clock.","on","at","시각 앞에는 at을 씁니다."),
+    Q("PREP_TIME","He was born in March 5.","He was born on March 5.","in","on","날짜(특정 날) 앞에는 on을 씁니다."),
+    Q("PREP_TIME","She studies at night.","She studies at night.","","","","A1"),
+    Q("PREP_TIME","I will visit on summer.","I will visit in summer.","on","in","계절 앞에는 in을 씁니다."),
+    Q("PREP_TIME","He called me in midnight.","He called me at midnight.","in","at","midnight(자정) 앞에는 at을 씁니다."),
+    Q("PREP_TIME","She has a class on the afternoon.","She has a class in the afternoon.","on","in","오후에는 in the afternoon을 씁니다."),
+    Q("PREP_TIME","They met in Christmas Day.","They met on Christmas Day.","in","on","특정 날(Christmas Day) 앞에는 on을 씁니다."),
+    # ── CONJ_COORD ──────────────────────────────────────────────────────────
+    Q("CONJ_COORD","She is smart but also beautiful.","She is smart and also beautiful.","but","and","두 긍정적인 내용을 연결할 때는 and를 씁니다. but은 대조를 나타냅니다."),
+    Q("CONJ_COORD","He studied hard, and he failed the test.","He studied hard, but he failed the test.","and","but","공부는 열심히 했지만 시험에 떨어진 것은 대조이므로 but을 씁니다."),
+    Q("CONJ_COORD","I like cats, but I also like dogs.","I like cats, and I also like dogs.","but","and","두 내용이 같은 방향이므로 and를 써야 합니다.","A2"),
+    Q("CONJ_COORD","She was tired, so she went to bed early.","She was tired, so she went to bed early.","","","","A1"),
+    Q("CONJ_COORD","It was cold, and we went swimming.","It was cold, but we went swimming.","and","but","추운데도 수영하러 간 것은 대조이므로 but을 씁니다."),
+    Q("CONJ_COORD","He can dance, but also sing.","He can dance, and also sing.","but","and","노래와 춤 모두 잘하는 것을 연결하므로 and를 씁니다."),
+    Q("CONJ_COORD","She likes tea and coffee, and she doesn't like juice.","She likes tea and coffee, but she doesn't like juice.","and","but","앞과 뒤 내용이 반대이므로 but을 씁니다."),
+    Q("CONJ_COORD","I was hungry, but I ate a lot.","I was hungry, so I ate a lot.","but","so","배가 고파서 많이 먹은 것은 원인-결과이므로 so를 씁니다."),
+    Q("CONJ_COORD","She felt sick, so she came to school.","She felt sick, so she didn't come to school.","came","didn't come","아파서 학교에 왔다는 것은 논리적으로 맞지 않습니다. didn't come이 맞습니다.","A2"),
+    Q("CONJ_COORD","He has a car, or he takes the bus.","He has a car, but he takes the bus.","or","but","차가 있지만 버스를 탄다는 대조이므로 but을 씁니다.","A2"),
+    # ── CONJ_SUB ────────────────────────────────────────────────────────────
+    Q("CONJ_SUB","She is happy because she won the prize.","She is happy because she won the prize.","","","","A1"),
+    Q("CONJ_SUB","I study hard although I want to pass.","I study hard because I want to pass.","although","because","공부하는 이유를 나타내므로 because를 씁니다. although는 '비록 ~이지만'입니다."),
+    Q("CONJ_SUB","He stays home if it rains.","He stays home when it rains.","if","when","비가 오면 집에 있는 습관적인 상황은 when을 씁니다.","A2"),
+    Q("CONJ_SUB","She will come when she will have time.","She will come when she has time.","will have","has","when절 안에서는 미래를 현재 시제로 표현합니다.","A2"),
+    Q("CONJ_SUB","I can't go out because it is nice weather.","I can't go out although it is nice weather.","because","although","날씨가 좋은데도 못 나간다는 것은 대조이므로 although를 씁니다.","A2"),
+    Q("CONJ_SUB","He will buy it if he has enough money.","He will buy it if he has enough money.","","","","A1"),
+    Q("CONJ_SUB","She cried although she was very sad.","She cried because she was very sad.","although","because","슬퍼서 운 것이므로 이유를 나타내는 because를 씁니다."),
+    Q("CONJ_SUB","I will call you when I will arrive.","I will call you when I arrive.","will arrive","arrive","when절 안에서는 미래를 현재 시제로 씁니다.","A2"),
+    Q("CONJ_SUB","He goes to bed early because he doesn't feel tired.","He goes to bed early because he feels tired.","doesn't feel tired","feels tired","피곤해서 일찍 자는 것이므로 feels tired가 맞습니다."),
+    Q("CONJ_SUB","She studies every day if she wants to improve.","She studies every day because she wants to improve.","if","because","향상되길 원하기 때문에 공부한다는 이유이므로 because가 맞습니다."),
+]
+
+# Remove placeholder Q entries (where error_word and correct_word are empty)
+QUESTIONS = [q for q in QUESTIONS if q["error_word"] and q["correct_word"]]
+
+
+def seed_grammar(db: Session):
+    if db.query(GrammarCategory).first():
+        return  # already seeded
+
+    code_to_id: dict[str, int] = {}
+
+    # Insert parents first, then children
+    for cat in CATEGORIES:
+        if cat["parent"] is None:
+            obj = GrammarCategory(
+                code=cat["code"], name_ko=cat["name_ko"],
+                parent_id=None, depth=cat["depth"], sort_order=cat["sort"]
+            )
+            db.add(obj)
+            db.flush()
+            code_to_id[cat["code"]] = obj.id
+
+    for cat in CATEGORIES:
+        if cat["parent"] is not None:
+            parent_id = code_to_id.get(cat["parent"])
+            obj = GrammarCategory(
+                code=cat["code"], name_ko=cat["name_ko"],
+                parent_id=parent_id, depth=cat["depth"], sort_order=cat["sort"]
+            )
+            db.add(obj)
+            db.flush()
+            code_to_id[cat["code"]] = obj.id
+
+    for q in QUESTIONS:
+        db.add(GrammarQuestion(**q))
+
+    db.commit()

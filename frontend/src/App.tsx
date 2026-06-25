@@ -3,6 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Home from './pages/Home'
 import Setup from './pages/Setup'
 import FlashCard from './pages/FlashCard'
+import GrammarSetup from './pages/GrammarSetup'
+import GrammarQuiz from './pages/GrammarQuiz'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -16,6 +18,8 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/setup" element={<Setup />} />
           <Route path="/flashcard" element={<FlashCard />} />
+          <Route path="/grammar/setup" element={<GrammarSetup />} />
+          <Route path="/grammar/quiz" element={<GrammarQuiz />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
