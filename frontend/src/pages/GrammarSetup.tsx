@@ -234,14 +234,6 @@ export default function GrammarSetup() {
     grammarApi.classes().then(setClasses)
   }, [])
 
-  // auto-select all children by default
-  useEffect(() => {
-    if (categories.length > 0 && selectedCodes.size === 0) {
-      const allChildren = new Set(categories.filter((c) => c.depth === 2).map((c) => c.code))
-      setSelectedCodes(allChildren)
-    }
-  }, [categories])
-
   const handleNewTeacher = async (name: string) => {
     const t = await grammarApi.createTeacher(name)
     setTeachers((prev) => [...prev, t])

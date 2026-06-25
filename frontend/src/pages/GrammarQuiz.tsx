@@ -1,10 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { X, ChevronLeft, ChevronRight, RotateCcw, Printer, Timer, TimerOff, BookOpen } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, RotateCcw, Printer, Timer, TimerOff, AlignLeft, AlignCenter } from 'lucide-react'
 import { grammarApi } from '../api/client'
 import { useGrammarStore } from '../store/grammarStore'
 import type { GrammarQuestion } from '../types'
 import GrammarPrintView from '../components/GrammarPrintView'
+
+const GRAMMAR_FONT_SIZE_KEY = 'screenVocaGrammarFontSize'
+const GRAMMAR_ALIGN_KEY = 'screenVocaGrammarAlign'
+const FONT_SIZE_STEP = 4
+const FONT_SIZE_MIN = 16
+const FONT_SIZE_MAX = 72
 
 // ── Save dialog ───────────────────────────────────────────────────────────
 
@@ -36,33 +42,39 @@ function PanelMode({
   mcq,
   revealed,
   onReveal,
+  fontSize,
+  align,
 }: {
   questions: GrammarQuestion[]
   mcq: boolean
   revealed: Set<number>
   onReveal: (id: number) => void
+  fontSize: number
+  align: 'left' | 'center'
 }) {
   return (
-    <div className="grid gap-4 p-6" style={{ gridTemplateColumns: questions.length === 1 ? '1fr' : 'repeat(auto-fit, minmax(340px, 1fr))' }}>
+    <div className="flex flex-col gap-4 p-6">
       {questions.map((q, i) => {
         const isRevealed = revealed.has(q.id)
         return (
           <div
             key={q.id}
             onClick={() => onReveal(q.id)}
-            className={`rounded-2xl border-2 p-5 cursor-pointer transition-all select-none
+            className={`rounded-2xl border-2 p-6 cursor-pointer transition-all select-none
               ${isRevealed
                 ? 'border-violet-400 bg-violet-50'
                 : 'border-slate-200 bg-white hover:border-violet-300 hover:shadow-md'}`}
           >
-            <div className="flex items-start gap-3">
-              <span className={`text-lg font-bold shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm
-                ${isRevealed ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+            <div className="flex items-start gap-4">
+              <span
+                className={`font-bold shrink-0 rounded-full flex items-center justify-center
+                  ${isRevealed ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-500'}`}
+                style={{ width: fontSize + 8, height: fontSize + 8, fontSize: fontSize * 0.6 }}
+              >
                 {i + 1}
               </span>
               <div className="flex-1 min-w-0">
-                {/* Error sentence */}
-                <p className="text-slate-800 font-medium leading-relaxed text-base">
+                <p className="text-slate-800 font-medium leading-relaxed" style={{ fontSize, textAlign: align }}>
                   {q.error_sentence.split(q.error_word).map((part, idx, arr) => (
                     idx < arr.length - 1 ? (
                       <span key={idx}>
@@ -75,29 +87,23 @@ function PanelMode({
                   ))}
                 </p>
 
-                {/* MCQ options */}
                 {mcq && q.mcq_options && !isRevealed && (
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     {q.mcq_options.map((opt, oi) => (
-                      <div key={oi} className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-600">
+                      <div key={oi} className="border border-slate-200 rounded-lg px-3 py-1.5 text-slate-600" style={{ fontSize: fontSize * 0.75 }}>
                         <span className="font-bold text-slate-400 mr-1">{String.fromCharCode(65 + oi)}.</span>{opt}
                       </div>
                     ))}
                   </div>
                 )}
 
-                {/* Revealed answer */}
                 {isRevealed && (
                   <div className="mt-3 space-y-1">
-                    <p className="text-violet-700 font-semibold text-base">
+                    <p className="text-violet-700 font-semibold" style={{ fontSize, textAlign: align }}>
                       → {q.correct_sentence}
                     </p>
-                    <p className="text-xs text-slate-500">{q.explanation_ko}</p>
+                    <p className="text-slate-500" style={{ fontSize: fontSize * 0.7, textAlign: align }}>{q.explanation_ko}</p>
                   </div>
-                )}
-
-                {!isRevealed && (
-                  <p className="text-xs text-slate-400 mt-2">터치하면 정답 공개</p>
                 )}
               </div>
             </div>
@@ -118,6 +124,8 @@ function FlashcardMode({
   onReveal,
   onPrev,
   onNext,
+  fontSize,
+  align,
 }: {
   questions: GrammarQuestion[]
   index: number
@@ -126,16 +134,19 @@ function FlashcardMode({
   onReveal: (id: number) => void
   onPrev: () => void
   onNext: () => void
+  fontSize: number
+  align: 'left' | 'center'
 }) {
   const q = questions[index]
   const isRevealed = revealed.has(q.id)
   const total = questions.length
-
   const errorParts = q.error_sentence.split(q.error_word)
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-8 py-6 cursor-pointer select-none"
-      onClick={() => onReveal(q.id)}>
+    <div
+      className="flex-1 overflow-auto flex flex-col items-center justify-center px-8 py-6 cursor-pointer select-none"
+      onClick={() => onReveal(q.id)}
+    >
       <div className="w-full max-w-2xl space-y-6">
         <div className="text-center">
           <span className="text-slate-400 text-sm font-mono">{index + 1} / {total}</span>
@@ -144,7 +155,7 @@ function FlashcardMode({
         <div className={`rounded-2xl border-2 p-8 transition-all
           ${isRevealed ? 'border-violet-400 bg-violet-50' : 'border-slate-200 bg-white'}`}>
 
-          <p className="text-2xl font-medium text-slate-800 leading-relaxed text-center">
+          <p className="font-medium text-slate-800 leading-relaxed" style={{ fontSize, textAlign: align }}>
             {errorParts.map((part, idx, arr) => (
               idx < arr.length - 1 ? (
                 <span key={idx}>
@@ -160,7 +171,7 @@ function FlashcardMode({
           {mcq && q.mcq_options && !isRevealed && (
             <div className="mt-6 grid grid-cols-2 gap-3">
               {q.mcq_options.map((opt, oi) => (
-                <div key={oi} className="border border-slate-200 rounded-xl px-4 py-2.5 text-slate-600 text-center">
+                <div key={oi} className="border border-slate-200 rounded-xl px-4 py-2.5 text-slate-600 text-center" style={{ fontSize: fontSize * 0.75 }}>
                   <span className="font-bold text-slate-400 mr-2">{String.fromCharCode(65 + oi)}.</span>{opt}
                 </div>
               ))}
@@ -168,14 +179,10 @@ function FlashcardMode({
           )}
 
           {isRevealed && (
-            <div className="mt-6 text-center space-y-2">
-              <p className="text-xl font-bold text-violet-700">→ {q.correct_sentence}</p>
-              <p className="text-sm text-slate-500">{q.explanation_ko}</p>
+            <div className="mt-6 space-y-2">
+              <p className="font-bold text-violet-700" style={{ fontSize, textAlign: align }}>→ {q.correct_sentence}</p>
+              <p className="text-slate-500" style={{ fontSize: fontSize * 0.7, textAlign: align }}>{q.explanation_ko}</p>
             </div>
-          )}
-
-          {!isRevealed && (
-            <p className="text-center text-sm text-slate-400 mt-4">터치하면 정답 공개</p>
           )}
         </div>
 
@@ -216,6 +223,30 @@ export default function GrammarQuiz() {
   const [timerSec, setTimerSec] = useState<number | null>(config.timerSeconds)
   const [timerCount, setTimerCount] = useState(config.timerSeconds ?? 0)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const [fontSize, setFontSize] = useState<number>(() => {
+    const saved = localStorage.getItem(GRAMMAR_FONT_SIZE_KEY)
+    return saved ? parseInt(saved, 10) : 28
+  })
+  const [align, setAlign] = useState<'left' | 'center'>(() =>
+    (localStorage.getItem(GRAMMAR_ALIGN_KEY) as 'left' | 'center') ?? 'left'
+  )
+
+  const adjustFontSize = (delta: number) => {
+    setFontSize((prev) => {
+      const next = Math.max(FONT_SIZE_MIN, Math.min(FONT_SIZE_MAX, prev + delta))
+      localStorage.setItem(GRAMMAR_FONT_SIZE_KEY, String(next))
+      return next
+    })
+  }
+
+  const toggleAlign = () => {
+    setAlign((prev) => {
+      const next = prev === 'left' ? 'center' : 'left'
+      localStorage.setItem(GRAMMAR_ALIGN_KEY, next)
+      return next
+    })
+  }
 
   const isFlashcard = config.displayMode === 'flashcard' || config.count === 1
 
@@ -322,16 +353,16 @@ export default function GrammarQuiz() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="h-screen bg-slate-900 flex items-center justify-center">
         <p className="text-slate-400 text-lg">문제 준비 중...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col select-none">
+    <div className="h-screen bg-slate-900 flex flex-col select-none">
       {/* Header */}
-      <div className="text-center pt-5 pb-1 px-4">
+      <div className="text-center pt-5 pb-1 px-4 shrink-0">
         <p className="text-slate-400 text-sm font-medium">
           문법 오답 찾기
           {config.grammarClass && ` — ${config.grammarClass.name}`}
@@ -341,7 +372,7 @@ export default function GrammarQuiz() {
         <span className="text-slate-400 text-sm font-mono">{questions.length}문제</span>
       </div>
 
-      {/* Content */}
+      {/* Content — scrollable */}
       {isFlashcard ? (
         <FlashcardMode
           questions={questions}
@@ -351,6 +382,8 @@ export default function GrammarQuiz() {
           onReveal={handleReveal}
           onPrev={() => setFlashIndex((i) => Math.max(0, i - 1))}
           onNext={() => setFlashIndex((i) => Math.min(questions.length - 1, i + 1))}
+          fontSize={fontSize}
+          align={align}
         />
       ) : (
         <div className="flex-1 overflow-auto">
@@ -359,13 +392,15 @@ export default function GrammarQuiz() {
             mcq={config.mcq}
             revealed={revealed}
             onReveal={handleReveal}
+            fontSize={fontSize}
+            align={align}
           />
         </div>
       )}
 
       {/* Timer bar */}
       {timerSec && (
-        <div className="w-full bg-slate-800 h-1">
+        <div className="w-full bg-slate-800 h-1 shrink-0">
           <div
             className="bg-violet-500 h-1 transition-all duration-1000"
             style={{ width: `${(timerCount / timerSec) * 100}%` }}
@@ -373,8 +408,8 @@ export default function GrammarQuiz() {
         </div>
       )}
 
-      {/* Bottom bar */}
-      <div className="bg-slate-800/80 backdrop-blur border-t border-slate-700 px-6 py-4 flex items-center gap-3">
+      {/* Bottom bar — fixed at bottom */}
+      <div className="shrink-0 bg-slate-800/80 backdrop-blur border-t border-slate-700 px-6 py-4 flex items-center gap-3">
         <button
           onClick={handleExit}
           className="flex items-center gap-1.5 text-slate-400 hover:text-white px-3 py-2 rounded-lg hover:bg-slate-700 transition-colors text-sm shrink-0"
@@ -386,7 +421,6 @@ export default function GrammarQuiz() {
           {isFlashcard ? 'Space: 공개 · ← →: 이동' : '패널 터치: 정답 공개'}
         </span>
 
-        {/* Reveal all / hide all (panel mode) */}
         {!isFlashcard && (
           <button
             onClick={() => {
@@ -403,6 +437,33 @@ export default function GrammarQuiz() {
         )}
 
         <div className="flex-1" />
+
+        {/* Align toggle */}
+        <button
+          onClick={toggleAlign}
+          title={align === 'left' ? '가운데 정렬로 변경' : '왼쪽 정렬로 변경'}
+          className="p-2.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+        >
+          {align === 'left' ? <AlignLeft size={18} /> : <AlignCenter size={18} />}
+        </button>
+
+        {/* Font size */}
+        <button
+          onClick={() => adjustFontSize(-FONT_SIZE_STEP)}
+          disabled={fontSize <= FONT_SIZE_MIN}
+          title="글자 크기 줄이기"
+          className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-600 bg-slate-700/50 text-slate-300 hover:text-white hover:bg-slate-600 hover:border-slate-500 transition-all disabled:opacity-25 disabled:cursor-not-allowed"
+        >
+          <ChevronLeft size={22} strokeWidth={2.5} />
+        </button>
+        <button
+          onClick={() => adjustFontSize(FONT_SIZE_STEP)}
+          disabled={fontSize >= FONT_SIZE_MAX}
+          title="글자 크기 키우기"
+          className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-600 bg-slate-700/50 text-slate-300 hover:text-white hover:bg-slate-600 hover:border-slate-500 transition-all disabled:opacity-25 disabled:cursor-not-allowed"
+        >
+          <ChevronRight size={22} strokeWidth={2.5} />
+        </button>
 
         {/* Restart */}
         <button
