@@ -276,6 +276,12 @@ QUESTIONS = [
     Q("MODAL_OTHER","He shoulds go to bed early.","He should go to bed early.","shoulds","should","조동사 should는 항상 should로 씁니다."),
     Q("MODAL_OTHER","You may to use my pen.","You may use my pen.","may to","may","조동사 may 뒤에 to를 쓰지 않습니다."),
     Q("MODAL_OTHER","They should to be quiet.","They should be quiet.","should to","should","조동사 should 뒤에 to를 쓰지 않습니다."),
+    Q("MODAL_OTHER","She must goes home now.","She must go home now.","goes","go","조동사 must 뒤에는 동사원형 go를 써야 합니다."),
+    Q("MODAL_OTHER","He may plays outside after school.","He may play outside after school.","plays","play","조동사 may 뒤에는 동사원형 play를 써야 합니다."),
+    Q("MODAL_OTHER","He should goes to bed early.","He should go to bed early.","goes","go","조동사 should 뒤에는 동사원형 go를 써야 합니다."),
+    Q("MODAL_OTHER","You must cleans your room every day.","You must clean your room every day.","cleans","clean","조동사 must 뒤에는 동사원형 clean을 써야 합니다."),
+    Q("MODAL_OTHER","They should studies harder for the test.","They should study harder for the test.","studies","study","조동사 should 뒤에는 동사원형 study를 써야 합니다."),
+    Q("MODAL_OTHER","She may eats lunch soon.","She may eat lunch soon.","eats","eat","조동사 may 뒤에는 동사원형 eat을 써야 합니다."),
     # ── TENSE_PAST_REG ──────────────────────────────────────────────────────
     Q("TENSE_PAST_REG","She walk to school yesterday.","She walked to school yesterday.","walk","walked","과거 시제에서 규칙 동사는 -ed를 붙여야 합니다."),
     Q("TENSE_PAST_REG","He play soccer last Sunday.","He played soccer last Sunday.","play","played","과거 시제에서 규칙 동사 play에 -ed를 붙여 played로 씁니다."),
@@ -430,6 +436,11 @@ QUESTIONS = [
     Q("PREP_PLACE","The map is hanging on wall.","The map is hanging on the wall.","on wall","on the wall","wall 앞에 the를 써야 합니다."),
     Q("PREP_PLACE","He lives in the 3rd floor.","He lives on the 3rd floor.","in","on","층수 앞에는 on을 씁니다."),
     Q("PREP_PLACE","She put her keys at the drawer.","She put her keys in the drawer.","at","in","서랍 안에 넣다는 in을 써야 합니다."),
+    Q("PREP_PLACE","The picture is at the wall.","The picture is on the wall.","at","on","벽에 걸려 있는 것은 on the wall입니다."),
+    Q("PREP_PLACE","She sat at the floor.","She sat on the floor.","at","on","바닥에 앉다는 표현은 on the floor입니다."),
+    Q("PREP_PLACE","The dog is sleeping at the sofa.","The dog is sleeping on the sofa.","at","on","소파 위에 있다는 것은 on the sofa입니다."),
+    Q("PREP_PLACE","She arrived in the airport.","She arrived at the airport.","in","at","공항, 역 등 특정 장소에 도착할 때는 at을 씁니다."),
+    Q("PREP_PLACE","He hid in the table.","He hid under the table.","in","under","테이블 밑에 숨는 것은 under the table입니다."),
     # ── PREP_TIME ───────────────────────────────────────────────────────────
     Q("PREP_TIME","She was born in 1995.","She was born in 1995.","","","","A1"),  # placeholder
     Q("PREP_TIME","He goes to school at morning.","He goes to school in the morning.","at morning","in the morning","아침에는 in the morning을 씁니다."),
@@ -444,6 +455,10 @@ QUESTIONS = [
     Q("PREP_TIME","He called me in midnight.","He called me at midnight.","in","at","midnight(자정) 앞에는 at을 씁니다."),
     Q("PREP_TIME","She has a class on the afternoon.","She has a class in the afternoon.","on","in","오후에는 in the afternoon을 씁니다."),
     Q("PREP_TIME","They met in Christmas Day.","They met on Christmas Day.","in","on","특정 날(Christmas Day) 앞에는 on을 씁니다."),
+    Q("PREP_TIME","She was born at 2001.","She was born in 2001.","at","in","연도 앞에는 in을 씁니다."),
+    Q("PREP_TIME","He comes home at evening.","He comes home in the evening.","at evening","in the evening","저녁에는 in the evening을 씁니다."),
+    Q("PREP_TIME","I have piano lessons at Tuesday.","I have piano lessons on Tuesday.","at","on","요일 앞에는 on을 씁니다."),
+    Q("PREP_TIME","She goes to bed on night.","She goes to bed at night.","on","at","밤에는 at night을 씁니다."),
     # ── CONJ_COORD ──────────────────────────────────────────────────────────
     Q("CONJ_COORD","She is smart but also beautiful.","She is smart and also beautiful.","but","and","두 긍정적인 내용을 연결할 때는 and를 씁니다. but은 대조를 나타냅니다."),
     Q("CONJ_COORD","He studied hard, and he failed the test.","He studied hard, but he failed the test.","and","but","공부는 열심히 했지만 시험에 떨어진 것은 대조이므로 but을 씁니다."),
@@ -455,6 +470,12 @@ QUESTIONS = [
     Q("CONJ_COORD","I was hungry, but I ate a lot.","I was hungry, so I ate a lot.","but","so","배가 고파서 많이 먹은 것은 원인-결과이므로 so를 씁니다."),
     Q("CONJ_COORD","She felt sick, so she came to school.","She felt sick, so she didn't come to school.","came","didn't come","아파서 학교에 왔다는 것은 논리적으로 맞지 않습니다. didn't come이 맞습니다.","A2"),
     Q("CONJ_COORD","He has a car, or he takes the bus.","He has a car, but he takes the bus.","or","but","차가 있지만 버스를 탄다는 대조이므로 but을 씁니다.","A2"),
+    Q("CONJ_COORD","She ran fast, but she won the race.","She ran fast, so she won the race.","but","so","빠르게 달려서 경주에서 이긴 것은 원인-결과이므로 so를 씁니다."),
+    Q("CONJ_COORD","He practiced every day, so he gave up.","He practiced every day, but he gave up.","so","but","매일 연습했지만 포기했다는 것은 대조이므로 but을 씁니다."),
+    Q("CONJ_COORD","She didn't study, so she passed the exam.","She didn't study, but she passed the exam.","so","but","공부하지 않았는데도 시험에 합격한 것은 대조이므로 but을 씁니다."),
+    Q("CONJ_COORD","The food was very spicy, and I ate it all.","The food was very spicy, but I ate it all.","and","but","음식이 매운데도 다 먹었다는 것은 대조이므로 but을 씁니다."),
+    Q("CONJ_COORD","He is very poor, and he is always happy.","He is very poor, but he is always happy.","and","but","가난하지만 행복하다는 것은 대조이므로 but을 씁니다."),
+    Q("CONJ_COORD","She was sick, but she had to rest.","She was sick, so she had to rest.","but","so","아파서 쉬어야 했다는 것은 원인-결과이므로 so를 씁니다."),
     # ── CONJ_SUB ────────────────────────────────────────────────────────────
     Q("CONJ_SUB","She is happy because she won the prize.","She is happy because she won the prize.","","","","A1"),
     Q("CONJ_SUB","I study hard although I want to pass.","I study hard because I want to pass.","although","because","공부하는 이유를 나타내므로 because를 씁니다. although는 '비록 ~이지만'입니다."),
@@ -466,6 +487,12 @@ QUESTIONS = [
     Q("CONJ_SUB","I will call you when I will arrive.","I will call you when I arrive.","will arrive","arrive","when절 안에서는 미래를 현재 시제로 씁니다.","A2"),
     Q("CONJ_SUB","He goes to bed early because he doesn't feel tired.","He goes to bed early because he feels tired.","doesn't feel tired","feels tired","피곤해서 일찍 자는 것이므로 feels tired가 맞습니다."),
     Q("CONJ_SUB","She studies every day if she wants to improve.","She studies every day because she wants to improve.","if","because","향상되길 원하기 때문에 공부한다는 이유이므로 because가 맞습니다."),
+    Q("CONJ_SUB","She passed the test although she studied hard.","She passed the test because she studied hard.","although","because","열심히 공부했기 때문에 시험에 합격한 것이므로 because를 씁니다."),
+    Q("CONJ_SUB","He was late because he woke up early.","He was late although he woke up early.","because","although","일찍 일어났는데도 늦은 것은 대조이므로 although를 씁니다."),
+    Q("CONJ_SUB","I brought an umbrella because it was sunny.","I brought an umbrella although it was sunny.","because","although","맑은 날씨인데도 우산을 가져간 것은 대조이므로 although를 씁니다."),
+    Q("CONJ_SUB","She went to the park because it was raining.","She went to the park although it was raining.","because","although","비가 오는데도 공원에 간 것은 대조이므로 although를 씁니다."),
+    Q("CONJ_SUB","I will buy the shoes when I save enough money.","I will buy the shoes if I save enough money.","when","if","돈을 모으는 것이 불확실한 조건이므로 when 대신 if를 씁니다.","A2"),
+    Q("CONJ_SUB","She always calls me if she gets home.","She always calls me when she gets home.","if","when","집에 도착하면 항상 전화한다는 습관적 사실이므로 when을 씁니다.","A2"),
 ]
 
 # Remove placeholder Q entries (where error_word and correct_word are empty)
