@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { BookOpen, Plus, Play, Trash2, Calendar, Clock, PenLine } from 'lucide-react'
 import { sessionsApi } from '../api/client'
 import { useSessionStore } from '../store/sessionStore'
+import { computePeriodLabel } from '../utils/period'
 import type { SavedSession } from '../types'
 
 const PERIOD_COLORS: Record<string, string> = {
@@ -96,7 +97,9 @@ export default function Home() {
             <p className="text-sm text-slate-500 mb-4">
               저장된 세션 {sessions.length}개 — 클릭하면 바로 시작합니다
             </p>
-            {sessions.map((s) => (
+            {sessions.map((s) => {
+              const periodLabel = computePeriodLabel(s.period_label, s.period_base_offset_weeks, s.created_at)
+              return (
               <div
                 key={s.id}
                 onClick={() => handleLoad(s)}
@@ -105,8 +108,8 @@ export default function Home() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                      <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${periodColor(s.period_label)}`}>
-                        {s.period_label}
+                      <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${periodColor(periodLabel)}`}>
+                        {periodLabel}
                       </span>
                       <span className="text-xs text-slate-400 font-mono">
                         {s.display_mode === 'meaning' ? 'Meaning' : s.display_mode === 'spelling' ? 'Spelling' : 'Alternating'}
@@ -139,7 +142,8 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </main>

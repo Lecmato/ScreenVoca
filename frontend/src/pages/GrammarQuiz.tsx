@@ -12,6 +12,21 @@ const FONT_SIZE_STEP = 4
 const FONT_SIZE_MIN = 16
 const FONT_SIZE_MAX = 72
 
+// Highlights `word` inside `sentence` (used to make the corrected word pop out in red)
+function renderWithHighlight(sentence: string, word: string) {
+  const parts = sentence.split(word)
+  return parts.map((part, idx, arr) =>
+    idx < arr.length - 1 ? (
+      <span key={idx}>
+        {part}
+        <span className="text-red-600 font-extrabold">{word}</span>
+      </span>
+    ) : (
+      <span key={idx}>{part}</span>
+    )
+  )
+}
+
 // ── Save dialog ───────────────────────────────────────────────────────────
 
 function SaveDialog({ onSave, onSkip }: { onSave: () => void; onSkip: () => void }) {
@@ -79,7 +94,7 @@ function PanelMode({
                     idx < arr.length - 1 ? (
                       <span key={idx}>
                         {part}
-                        <span className={`font-bold underline decoration-2 ${isRevealed ? 'text-red-500 line-through decoration-red-400' : 'text-slate-800 decoration-slate-400'}`}>
+                        <span className={`font-bold underline decoration-2 ${isRevealed ? 'text-red-500 line-through decoration-red-400' : 'text-orange-600 decoration-orange-500'}`}>
                           {q.error_word}
                         </span>
                       </span>
@@ -100,7 +115,7 @@ function PanelMode({
                 {isRevealed && (
                   <div className="mt-3 space-y-1">
                     <p className="text-violet-700 font-semibold" style={{ fontSize, textAlign: align }}>
-                      → {q.correct_sentence}
+                      → {renderWithHighlight(q.correct_sentence, q.correct_word)}
                     </p>
                     <p className="text-slate-500" style={{ fontSize: fontSize * 0.7, textAlign: align }}>{q.explanation_ko}</p>
                   </div>
@@ -180,7 +195,9 @@ function FlashcardMode({
 
           {isRevealed && (
             <div className="mt-6 space-y-2">
-              <p className="font-bold text-violet-700" style={{ fontSize, textAlign: align }}>→ {q.correct_sentence}</p>
+              <p className="font-bold text-violet-700" style={{ fontSize, textAlign: align }}>
+                → {renderWithHighlight(q.correct_sentence, q.correct_word)}
+              </p>
               <p className="text-slate-500" style={{ fontSize: fontSize * 0.7, textAlign: align }}>{q.explanation_ko}</p>
             </div>
           )}

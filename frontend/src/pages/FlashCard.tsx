@@ -2,17 +2,22 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ChevronRight, ChevronLeft, X, Volume2, Shuffle, Timer,
-  TimerOff, RotateCcw, Printer,
+  TimerOff, RotateCcw, Printer, Settings,
 } from 'lucide-react'
 import { sessionsApi } from '../api/client'
 import { useSessionStore } from '../store/sessionStore'
-import type { Word, DisplayMode } from '../types'
+import { computePeriodLabel, computeEffectiveOffsetWeeks } from '../utils/period'
+import { FONT_FAMILIES } from '../constants/fonts'
+import type { Word, DisplayMode, FontSettings } from '../types'
 import PrintView from '../components/PrintView'
 
 const FONT_SIZE_KEY = 'screenVocaFontSize'
 const FONT_SIZE_STEP = 10
 const FONT_SIZE_MIN = 40
 const FONT_SIZE_MAX = 300
+
+const HEADER_FONT_KEY = 'screenVocaHeaderFont'
+const DEFAULT_HEADER_FONT: FontSettings = { family: 'Arial', size: 22, color: '#e2e8f0' }
 
 type CardSide = 'front' | 'back'
 
@@ -102,6 +107,26 @@ export default function FlashCard() {
     document.body.classList.add('flashcard-mode')
     return () => document.body.classList.remove('flashcard-mode')
   }, [])
+
+  const [showHeaderSettings, setShowHeaderSettings] = useState(false)
+
+  // Header text (period label / counter) font — persisted in localStorage per machine,
+  // shared across all sessions on this computer.
+  const [headerFont, setHeaderFont] = useState<FontSettings>(() => {
+    const saved = localStorage.getItem(HEADER_FONT_KEY)
+    if (saved) {
+      try { return JSON.parse(saved) } catch { /* fall through to default */ }
+    }
+    return DEFAULT_HEADER_FONT
+  })
+
+  const updateHeaderFont = (patch: Partial<FontSettings>) => {
+    setHeaderFont((prev) => {
+      const next = { ...prev, ...patch }
+      localStorage.setItem(HEADER_FONT_KEY, JSON.stringify(next))
+      return next
+    })
+  }
 
   // Font size — persisted in localStorage per machine
   const [fontSize, setFontSize] = useState<number>(() => {
@@ -212,7 +237,13 @@ export default function FlashCard() {
   const handleExit = () => setShowSaveDialog(true)
 
   const handleSave = async () => {
-    try { await sessionsApi.save(config) } catch { /* silent */ }
+    try {
+      // Re-anchor the dynamic period offset to "now" so a re-saved session
+      // keeps reading correctly going forward instead of resetting the clock.
+      const effectiveLabel = computePeriodLabel(config.periodLabel, config.periodBaseOffsetWeeks, config.createdAt)
+      const effectiveOffsetWeeks = computeEffectiveOffsetWeeks(config.periodBaseOffsetWeeks, config.createdAt)
+      await sessionsApi.save({ ...config, periodLabel: effectiveLabel, periodBaseOffsetWeeks: effectiveOffsetWeeks })
+    } catch { /* silent */ }
     setShowSaveDialog(false)
     navigate('/')
   }
@@ -232,7 +263,13 @@ export default function FlashCard() {
       ? `[${config.sections[0]}]`
       : `[${config.sections[0]} ~ ${config.sections[config.sections.length - 1]}]`
 
-  const periodDisplay = `${config.periodLabel} Voca ${sectionRange}`
+  const displayPeriodLabel = computePeriodLabel(config.periodLabel, config.periodBaseOffsetWeeks, config.createdAt)
+  const periodDisplay = `${displayPeriodLabel} Voca ${sectionRange}`
+  const headerFontStyle = {
+    fontFamily: headerFont.family,
+    fontSize: `${headerFont.size}px`,
+    color: headerFont.color,
+  }
 
   // ── Render ───────────────────────────────────────────────────────────────
 
@@ -240,12 +277,12 @@ export default function FlashCard() {
     <div className="min-h-screen bg-slate-900 flex flex-col select-none">
       {/* Top: period label */}
       <div className="text-center pt-6 pb-2 px-4">
-        <p className="text-slate-400 text-base font-medium tracking-wide">{periodDisplay}</p>
+        <p style={headerFontStyle} className="font-medium tracking-wide">{periodDisplay}</p>
       </div>
 
       {/* Counter top-right */}
       <div className="absolute top-4 right-5">
-        <span className="text-slate-400 text-sm font-mono">{index + 1} / {total}</span>
+        <span style={headerFontStyle} className="font-mono">{index + 1} / {total}</span>
       </div>
 
       {/* Main card area — click to flip */}
@@ -406,6 +443,58 @@ export default function FlashCard() {
         >
           <Printer size={18} />
         </button>
+
+        {/* Header text settings (gear) — rightmost; live-adjusts the top period label / counter font */}
+        <div className="relative">
+          <button
+            onClick={() => setShowHeaderSettings((v) => !v)}
+            title="상단 표시 글자 설정"
+            className={`p-2.5 rounded-lg transition-colors ${showHeaderSettings ? 'text-indigo-400 bg-indigo-900/50' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}
+          >
+            <Settings size={18} />
+          </button>
+          {showHeaderSettings && (
+            <div className="absolute bottom-12 right-0 bg-slate-800 border border-slate-600 rounded-xl p-4 shadow-xl z-20 w-64 space-y-3">
+              <p className="text-xs font-semibold text-slate-300">상단 표시 글자 (교재 범위 · 순번)</p>
+              <div>
+                <label className="text-xs text-slate-400 block mb-1">폰트</label>
+                <select
+                  value={headerFont.family}
+                  onChange={(e) => updateHeaderFont({ family: e.target.value })}
+                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
+                >
+                  {FONT_FAMILIES.map((f) => (
+                    <option key={f} value={f}>{f}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-slate-400 shrink-0">색상</label>
+                <input
+                  type="color"
+                  value={headerFont.color}
+                  onChange={(e) => updateHeaderFont({ color: e.target.value })}
+                  className="w-8 h-8 rounded border border-slate-600 cursor-pointer p-0.5 bg-slate-700"
+                />
+                <span className="text-xs text-slate-400 font-mono">{headerFont.color}</span>
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 block mb-1">
+                  크기 <span className="text-slate-500">{headerFont.size}px</span>
+                </label>
+                <input
+                  type="range"
+                  min={14}
+                  max={48}
+                  step={2}
+                  value={headerFont.size}
+                  onChange={(e) => updateHeaderFont({ size: Number(e.target.value) })}
+                  className="w-full accent-indigo-600"
+                />
+              </div>
+            </div>
+          )}
+        </div>
         </div>
       </div>
 

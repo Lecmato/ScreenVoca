@@ -10,6 +10,7 @@ class SavedSession(Base):
     name = Column(String, nullable=False)
     book_name = Column(String, nullable=False)
     period_label = Column(String, nullable=False)
+    period_base_offset_weeks = Column(Integer, nullable=True)
     sections = Column(JSON, nullable=False)
     words = Column(JSON, nullable=False)
     display_mode = Column(String, nullable=False)

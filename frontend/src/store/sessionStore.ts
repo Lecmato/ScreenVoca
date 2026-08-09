@@ -9,6 +9,8 @@ const DEFAULT_FONT: FontSettings = {
 
 const DEFAULT_CONFIG: SessionConfig = {
   periodLabel: 'This Week',
+  periodBaseOffsetWeeks: 0,
+  createdAt: null,
   bookName: '',
   sections: [],
   words: [],
@@ -22,7 +24,7 @@ interface SessionStore {
   config: SessionConfig
   step: number
 
-  setPeriodLabel: (label: PeriodLabel) => void
+  setPeriodLabel: (label: PeriodLabel, baseOffsetWeeks: number | null) => void
   setBookAndSections: (bookName: string, sections: string[]) => void
   setWords: (words: Word[]) => void
   setDisplayMode: (mode: DisplayMode) => void
@@ -32,6 +34,7 @@ interface SessionStore {
   setStep: (step: number) => void
   loadFromSaved: (saved: {
     period_label: string
+    period_base_offset_weeks: number | null
     book_name: string
     sections: string[]
     words: Word[]
@@ -39,6 +42,7 @@ interface SessionStore {
     font_settings: FontSettings
     shuffle: boolean
     timer_seconds: number | null
+    created_at: string
   }) => void
   reset: () => void
 }
@@ -47,8 +51,8 @@ export const useSessionStore = create<SessionStore>((set) => ({
   config: { ...DEFAULT_CONFIG },
   step: 1,
 
-  setPeriodLabel: (label) =>
-    set((s) => ({ config: { ...s.config, periodLabel: label } })),
+  setPeriodLabel: (label, baseOffsetWeeks) =>
+    set((s) => ({ config: { ...s.config, periodLabel: label, periodBaseOffsetWeeks: baseOffsetWeeks } })),
 
   setBookAndSections: (bookName, sections) =>
     set((s) => ({ config: { ...s.config, bookName, sections } })),
@@ -74,6 +78,8 @@ export const useSessionStore = create<SessionStore>((set) => ({
     set({
       config: {
         periodLabel: saved.period_label as PeriodLabel,
+        periodBaseOffsetWeeks: saved.period_base_offset_weeks,
+        createdAt: saved.created_at,
         bookName: saved.book_name,
         sections: saved.sections,
         words: saved.words,

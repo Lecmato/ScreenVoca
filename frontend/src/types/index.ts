@@ -23,6 +23,8 @@ export type PeriodLabel =
 
 export interface SessionConfig {
   periodLabel: PeriodLabel
+  periodBaseOffsetWeeks: number | null
+  createdAt: string | null
   bookName: string
   sections: string[]
   words: Word[]
@@ -37,6 +39,7 @@ export interface SavedSession {
   name: string
   book_name: string
   period_label: string
+  period_base_offset_weeks: number | null
   sections: string[]
   words: Word[]
   display_mode: DisplayMode

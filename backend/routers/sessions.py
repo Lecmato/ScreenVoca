@@ -27,6 +27,7 @@ class Word(BaseModel):
 class SessionCreate(BaseModel):
     book_name: str
     period_label: str
+    period_base_offset_weeks: Optional[int] = None
     sections: List[str]
     words: List[Word]
     display_mode: str  # meaning | spelling | alternating
@@ -41,6 +42,7 @@ def _session_to_dict(s: SavedSession) -> dict:
         "name": s.name,
         "book_name": s.book_name,
         "period_label": s.period_label,
+        "period_base_offset_weeks": s.period_base_offset_weeks,
         "sections": s.sections,
         "words": s.words,
         "display_mode": s.display_mode,
@@ -74,6 +76,7 @@ def create_session(data: SessionCreate, db: Session = Depends(get_db)):
         name=name,
         book_name=data.book_name,
         period_label=data.period_label,
+        period_base_offset_weeks=data.period_base_offset_weeks,
         sections=data.sections,
         words=[w.model_dump() for w in data.words],
         display_mode=data.display_mode,

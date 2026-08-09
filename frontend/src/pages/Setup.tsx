@@ -3,23 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, Upload, Check, ChevronLeft } from 'lucide-react'
 import { vocabApi } from '../api/client'
 import { useSessionStore } from '../store/sessionStore'
+import { FONT_FAMILIES } from '../constants/fonts'
 import type { Word, DisplayMode, FontSettings, ParsedVocab } from '../types'
 
-const PERIOD_OPTIONS = [
-  'This Week',
-  '1 Week Ago',
-  '2 Weeks Ago',
-  '3 Weeks Ago',
-  '1 Month Ago',
-]
-
-const FONT_FAMILIES = [
-  'Arial',
-  'Impact',
-  'Times New Roman',
-  'Comic Sans MS',
-  'Malgun Gothic',
-  'Courier New',
+const PERIOD_OPTIONS: { label: string; offsetWeeks: number }[] = [
+  { label: 'This Week', offsetWeeks: 0 },
+  { label: '1 Week Ago', offsetWeeks: 1 },
+  { label: '2 Weeks Ago', offsetWeeks: 2 },
+  { label: '3 Weeks Ago', offsetWeeks: 3 },
+  { label: '1 Month Ago', offsetWeeks: 4 },
 ]
 
 const STEP_LABELS = ['시기 선택', '단원 선택', '단어 선택', '표시 설정']
@@ -31,14 +23,14 @@ function Step1({ onNext }: { onNext: () => void }) {
   const [custom, setCustom] = useState('')
   const [useCustom, setUseCustom] = useState(false)
 
-  const selectPeriod = (label: string) => {
+  const selectPeriod = (label: string, offsetWeeks: number) => {
     setUseCustom(false)
-    setPeriodLabel(label)
+    setPeriodLabel(label, offsetWeeks)
   }
 
   const confirmCustom = () => {
     if (custom.trim()) {
-      setPeriodLabel(custom.trim())
+      setPeriodLabel(custom.trim(), null)
       setUseCustom(false)
     }
   }
@@ -46,17 +38,20 @@ function Step1({ onNext }: { onNext: () => void }) {
   return (
     <div className="space-y-4">
       <p className="text-slate-500 text-sm">이 단어들을 언제 배운 단어로 표시할까요?</p>
+      <p className="text-xs text-slate-400 -mt-2">
+        이번 주 / 지난 주 등은 시간이 지나면 자동으로 갱신됩니다 (예: 다음 주가 되면 "1 Week Ago" → "2 Weeks Ago")
+      </p>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {PERIOD_OPTIONS.map((opt) => (
           <button
-            key={opt}
-            onClick={() => selectPeriod(opt)}
+            key={opt.label}
+            onClick={() => selectPeriod(opt.label, opt.offsetWeeks)}
             className={`py-3 px-4 rounded-xl border-2 font-semibold transition-all text-sm
-              ${config.periodLabel === opt && !useCustom
+              ${config.periodLabel === opt.label && !useCustom
                 ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
                 : 'border-slate-200 text-slate-600 hover:border-indigo-300'}`}
           >
-            {opt}
+            {opt.label}
           </button>
         ))}
         <button

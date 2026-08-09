@@ -37,6 +37,7 @@ export const sessionsApi = {
     const payload = {
       book_name: config.bookName,
       period_label: config.periodLabel,
+      period_base_offset_weeks: config.periodBaseOffsetWeeks,
       sections: config.sections,
       words: config.words,
       display_mode: config.displayMode,
