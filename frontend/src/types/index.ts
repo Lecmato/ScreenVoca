@@ -108,4 +108,5 @@ export interface GrammarQuizConfig {
   displayMode: 'panel' | 'flashcard'
   timerSeconds: number | null
   saveHistory: boolean
+  level: 'elementary' | 'middle'
 }

@@ -122,6 +122,7 @@ class QuizGenerate(BaseModel):
     count: int = 5
     class_id: Optional[int] = None   # if provided, excludes already-used questions
     mcq: bool = False
+    level: str = "middle"  # "elementary" (A1만) | "middle" (A1+A2)
 
 
 class QuestionCreate(BaseModel):
@@ -162,15 +163,19 @@ def generate_quiz(body: QuizGenerate, db: Session = Depends(get_db)):
         for r in records:
             used_ids.update(r.question_ids or [])
 
+    levels = ["A1"] if body.level == "elementary" else ["A1", "A2"]
+
     qs = db.query(GrammarQuestion).filter(
         GrammarQuestion.category_code.in_(body.category_codes),
+        GrammarQuestion.difficulty.in_(levels),
         ~GrammarQuestion.id.in_(used_ids) if used_ids else True,
     ).all()
 
     if len(qs) < body.count:
-        # fallback: reset history pool and pick from all
+        # fallback: reset history pool and pick from all (still respecting level)
         qs = db.query(GrammarQuestion).filter(
-            GrammarQuestion.category_code.in_(body.category_codes)
+            GrammarQuestion.category_code.in_(body.category_codes),
+            GrammarQuestion.difficulty.in_(levels),
         ).all()
 
     selected = _diverse_sample(qs, body.count)

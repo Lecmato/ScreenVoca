@@ -65,6 +65,7 @@ export const grammarApi = {
     count: number
     class_id?: number
     mcq: boolean
+    level: 'elementary' | 'middle'
   }): Promise<GrammarQuestion[]> => {
     const { data } = await api.post<GrammarQuestion[]>('/grammar/generate', payload)
     return data

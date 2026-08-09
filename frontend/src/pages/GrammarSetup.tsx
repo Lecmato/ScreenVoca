@@ -223,6 +223,7 @@ export default function GrammarSetup() {
   const [selectedClass, setSelectedClass] = useState<GrammarClass | null>(null)
 
   const [count, setCount] = useState(5)
+  const [level, setLevel] = useState<'elementary' | 'middle'>('middle')
   const [mcq, setMcq] = useState(false)
   const [displayMode, setDisplayMode] = useState<'panel' | 'flashcard'>('panel')
   const [timerSeconds, setTimerSeconds] = useState<number | null>(null)
@@ -261,6 +262,7 @@ export default function GrammarSetup() {
       grammarClass: selectedClass,
       categoryCodes: Array.from(selectedCodes),
       count,
+      level,
       mcq,
       displayMode: count === 1 ? 'flashcard' : displayMode,
       timerSeconds,
@@ -329,6 +331,29 @@ export default function GrammarSetup() {
         <section>
           <h2 className="text-base font-bold text-slate-700 mb-4">3. 출제 옵션</h2>
           <div className="space-y-4">
+
+            {/* Level */}
+            <div className="flex items-start gap-4">
+              <span className="text-sm text-slate-600 w-24 pt-2">난이도</span>
+              <div>
+                <div className="flex gap-2">
+                  {([
+                    { key: 'elementary', label: '초등부' },
+                    { key: 'middle', label: '중등부' },
+                  ] as const).map((opt) => (
+                    <button
+                      key={opt.key}
+                      onClick={() => setLevel(opt.key)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors
+                        ${level === opt.key ? 'bg-indigo-600 text-white border-indigo-600' : 'border-slate-300 text-slate-600 hover:border-indigo-400'}`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-slate-400 mt-1.5">중등부 선택 시 초등부 문제도 함께 출제됩니다</p>
+              </div>
+            </div>
 
             {/* Count */}
             <div className="flex items-center gap-4">

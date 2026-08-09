@@ -274,6 +274,7 @@ export default function GrammarQuiz() {
       count: config.count,
       class_id: config.grammarClass?.id,
       mcq: config.mcq,
+      level: config.level,
     }).then((qs) => {
       setQuestions(qs)
       setLoading(false)
@@ -363,6 +364,7 @@ export default function GrammarQuiz() {
       count: config.count,
       class_id: config.grammarClass?.id,
       mcq: config.mcq,
+      level: config.level,
     })
     setQuestions(qs)
     setLoading(false)

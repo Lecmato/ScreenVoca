@@ -10,6 +10,7 @@ const DEFAULT: GrammarQuizConfig = {
   displayMode: 'panel',
   timerSeconds: null,
   saveHistory: false,
+  level: 'middle',
 }
 
 interface GrammarStore {
