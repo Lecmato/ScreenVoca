@@ -4,6 +4,7 @@ FastAPI server + auto-open browser
 """
 import sys
 import os
+import socket
 import threading
 import webbrowser
 import time
@@ -78,6 +79,18 @@ def _open_browser():
     webbrowser.open(f"http://localhost:{PORT}")
 
 
+def _server_already_running() -> bool:
+    """Detect a still-running previous instance so a second launch doesn't
+    just fail silently trying to bind an already-used port."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.5)
+        try:
+            s.connect(("127.0.0.1", PORT))
+            return True
+        except OSError:
+            return False
+
+
 def main():
     # When frozen (--noconsole), stdout/stderr are None which breaks uvicorn's
     # default log formatter. Redirect to file and disable uvicorn log config.
@@ -87,6 +100,11 @@ def main():
 
     try:
         if getattr(sys, "frozen", False):
+            if _server_already_running():
+                # Another instance is already serving on this port — just
+                # open a browser tab to it instead of crashing on bind().
+                webbrowser.open(f"http://localhost:{PORT}")
+                return
             t = threading.Thread(target=_open_browser, daemon=True)
             t.start()
         uvicorn.run(app, host="127.0.0.1", port=PORT, log_config=None)

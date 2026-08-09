@@ -19,6 +19,7 @@ def get_db():
 def init_db():
     Base.metadata.create_all(bind=engine)
     _migrate_saved_sessions()
+    _migrate_grammar_questions()
 
 
 def _migrate_saved_sessions():
@@ -27,4 +28,13 @@ def _migrate_saved_sessions():
         cols = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(saved_sessions)").fetchall()}
         if "period_base_offset_weeks" not in cols:
             conn.exec_driver_sql("ALTER TABLE saved_sessions ADD COLUMN period_base_offset_weeks INTEGER")
+        conn.commit()
+
+
+def _migrate_grammar_questions():
+    """Add columns introduced after the table already existed on users' machines."""
+    with engine.connect() as conn:
+        cols = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(grammar_questions)").fetchall()}
+        if "pattern_tag" not in cols:
+            conn.exec_driver_sql("ALTER TABLE grammar_questions ADD COLUMN pattern_tag VARCHAR")
         conn.commit()

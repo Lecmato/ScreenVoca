@@ -43,6 +43,7 @@ class GrammarQuestion(Base):
     explanation_ko = Column(Text, nullable=False)
     mcq_options = Column(JSON, nullable=True)   # ["옵션A","옵션B","옵션C","옵션D"], correct_word is the answer
     difficulty = Column(String, default="A1")   # A1 / A2
+    pattern_tag = Column(String, nullable=True) # error-type key, used to avoid same-pattern repeats within one quiz
     is_custom = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.now)
 

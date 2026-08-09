@@ -53,13 +53,39 @@ CATEGORIES = [
     # depth 2 — 접속사
     {"code": "CONJ_COORD",   "name_ko": "등위접속사",           "parent": "CONJUNCTION",  "depth": 2, "sort": 1},
     {"code": "CONJ_SUB",     "name_ko": "종속접속사",           "parent": "CONJUNCTION",  "depth": 2, "sort": 2},
+    # depth 2 — be동사 (there is/are), 명사/관사 (some/any) 추가
+    {"code": "BE_THERE",     "name_ko": "There is/are",         "parent": "BE_VERB",      "depth": 2, "sort": 4},
+    {"code": "NA_SOME_ANY",  "name_ko": "some / any",           "parent": "NOUN_ARTICLE", "depth": 2, "sort": 4},
+    # depth 1 — 신규 대분류
+    {"code": "PRONOUN",           "name_ko": "대명사",           "parent": None, "depth": 1, "sort": 10},
+    {"code": "PRESENT_PERFECT",   "name_ko": "현재완료",         "parent": None, "depth": 1, "sort": 11},
+    {"code": "INFINITIVE_GERUND", "name_ko": "to부정사 · 동명사", "parent": None, "depth": 1, "sort": 12},
+    {"code": "PASSIVE",           "name_ko": "수동태",           "parent": None, "depth": 1, "sort": 13},
+    {"code": "RELATIVE",          "name_ko": "관계대명사",       "parent": None, "depth": 1, "sort": 14},
+    # depth 2 — 대명사
+    {"code": "PRON_OBJ",     "name_ko": "목적격 대명사",         "parent": "PRONOUN",           "depth": 2, "sort": 1},
+    {"code": "PRON_POSS",    "name_ko": "소유격 · 소유대명사",   "parent": "PRONOUN",           "depth": 2, "sort": 2},
+    # depth 2 — 현재완료
+    {"code": "PP_FORM",      "name_ko": "have/has + 과거분사",   "parent": "PRESENT_PERFECT",   "depth": 2, "sort": 1},
+    {"code": "PP_ADV",       "name_ko": "since/for/yet/already/ever/never", "parent": "PRESENT_PERFECT", "depth": 2, "sort": 2},
+    # depth 2 — to부정사 · 동명사
+    {"code": "IG_TO",        "name_ko": "to부정사를 쓰는 동사",  "parent": "INFINITIVE_GERUND", "depth": 2, "sort": 1},
+    {"code": "IG_GERUND",    "name_ko": "동명사를 쓰는 동사",    "parent": "INFINITIVE_GERUND", "depth": 2, "sort": 2},
+    # depth 2 — 수동태
+    {"code": "PASS_FORM",    "name_ko": "be + 과거분사 형태",    "parent": "PASSIVE",           "depth": 2, "sort": 1},
+    {"code": "PASS_BY",      "name_ko": "by 행위자",             "parent": "PASSIVE",           "depth": 2, "sort": 2},
+    # depth 2 — 관계대명사
+    {"code": "REL_CHOICE",   "name_ko": "who/which/that 선택",   "parent": "RELATIVE",          "depth": 2, "sort": 1},
 ]
 
-# Q(code, error_sentence, correct_sentence, error_word, correct_word, explanation, difficulty)
-def Q(code, err, cor, ew, cw, expl, diff="A1"):
+# Q(code, error_sentence, correct_sentence, error_word, correct_word, explanation, difficulty, pattern)
+# pattern: 오류 유형 키. 같은 카테고리 안에서 동일한 pattern을 공유하는 문제는 한 퀴즈에
+# 중복 출제되지 않도록 우선순위가 낮아짐 (backend/routers/grammar.py generate_quiz 참고).
+# 아직 태그가 없는 문제는 pattern=None으로 남아있고, 기존과 동일하게 동작한다.
+def Q(code, err, cor, ew, cw, expl, diff="A1", pattern=None):
     return {"category_code": code, "error_sentence": err, "correct_sentence": cor,
             "error_word": ew, "correct_word": cw, "explanation_ko": expl,
-            "mcq_options": None, "difficulty": diff, "is_custom": False}
+            "mcq_options": None, "difficulty": diff, "pattern_tag": pattern, "is_custom": False}
 
 QUESTIONS = [
     # ── BE_AGREEMENT ────────────────────────────────────────────────────────
@@ -264,24 +290,24 @@ QUESTIONS = [
     Q("MODAL_WILL","Will she watches movies tonight?","Will she watch movies tonight?","watches","watch","조동사 will 뒤에는 동사원형 watch를 써야 합니다."),
     Q("MODAL_WILL","She won't comes to school tomorrow.","She won't come to school tomorrow.","comes","come","won't 뒤에도 동사원형 come을 써야 합니다."),
     # ── MODAL_OTHER ─────────────────────────────────────────────────────────
-    Q("MODAL_OTHER","You should to wear a coat.","You should wear a coat.","should to","should","조동사 should 뒤에는 to 없이 동사원형을 씁니다."),
-    Q("MODAL_OTHER","She musts go home now.","She must go home now.","musts","must","조동사 must는 항상 must로 씁니다."),
-    Q("MODAL_OTHER","He may to come later.","He may come later.","may to","may","조동사 may 뒤에는 to 없이 동사원형을 씁니다."),
-    Q("MODAL_OTHER","You must to wash your hands.","You must wash your hands.","must to","must","조동사 must 뒤에 to를 쓰지 않습니다."),
-    Q("MODAL_OTHER","She should eats more vegetables.","She should eat more vegetables.","eats","eat","조동사 should 뒤에는 동사원형 eat을 써야 합니다."),
-    Q("MODAL_OTHER","He mays play outside after school.","He may play outside after school.","mays","may","조동사 may는 항상 may로 씁니다."),
-    Q("MODAL_OTHER","They must to be careful.","They must be careful.","must to","must","조동사 must 뒤에 to를 쓰지 않습니다."),
-    Q("MODAL_OTHER","You should to study for the test.","You should study for the test.","should to","should","조동사 should 뒤에 to를 쓰지 않습니다."),
-    Q("MODAL_OTHER","She must washes her face.","She must wash her face.","washes","wash","조동사 must 뒤에는 동사원형 wash를 써야 합니다."),
-    Q("MODAL_OTHER","He shoulds go to bed early.","He should go to bed early.","shoulds","should","조동사 should는 항상 should로 씁니다."),
-    Q("MODAL_OTHER","You may to use my pen.","You may use my pen.","may to","may","조동사 may 뒤에 to를 쓰지 않습니다."),
-    Q("MODAL_OTHER","They should to be quiet.","They should be quiet.","should to","should","조동사 should 뒤에 to를 쓰지 않습니다."),
-    Q("MODAL_OTHER","She must goes home now.","She must go home now.","goes","go","조동사 must 뒤에는 동사원형 go를 써야 합니다."),
-    Q("MODAL_OTHER","He may plays outside after school.","He may play outside after school.","plays","play","조동사 may 뒤에는 동사원형 play를 써야 합니다."),
-    Q("MODAL_OTHER","He should goes to bed early.","He should go to bed early.","goes","go","조동사 should 뒤에는 동사원형 go를 써야 합니다."),
-    Q("MODAL_OTHER","You must cleans your room every day.","You must clean your room every day.","cleans","clean","조동사 must 뒤에는 동사원형 clean을 써야 합니다."),
-    Q("MODAL_OTHER","They should studies harder for the test.","They should study harder for the test.","studies","study","조동사 should 뒤에는 동사원형 study를 써야 합니다."),
-    Q("MODAL_OTHER","She may eats lunch soon.","She may eat lunch soon.","eats","eat","조동사 may 뒤에는 동사원형 eat을 써야 합니다."),
+    Q("MODAL_OTHER","You should to wear a coat.","You should wear a coat.","should to","should","조동사 should 뒤에는 to 없이 동사원형을 씁니다.",pattern="to_insertion"),
+    Q("MODAL_OTHER","She musts go home now.","She must go home now.","musts","must","조동사 must는 항상 must로 씁니다.",pattern="modal_conjugation"),
+    Q("MODAL_OTHER","He may to come later.","He may come later.","may to","may","조동사 may 뒤에는 to 없이 동사원형을 씁니다.",pattern="to_insertion"),
+    Q("MODAL_OTHER","You must to wash your hands.","You must wash your hands.","must to","must","조동사 must 뒤에 to를 쓰지 않습니다.",pattern="to_insertion"),
+    Q("MODAL_OTHER","She should eats more vegetables.","She should eat more vegetables.","eats","eat","조동사 should 뒤에는 동사원형 eat을 써야 합니다.",pattern="base_verb_form"),
+    Q("MODAL_OTHER","He mays play outside after school.","He may play outside after school.","mays","may","조동사 may는 항상 may로 씁니다.",pattern="modal_conjugation"),
+    Q("MODAL_OTHER","They must to be careful.","They must be careful.","must to","must","조동사 must 뒤에 to를 쓰지 않습니다.",pattern="to_insertion"),
+    Q("MODAL_OTHER","You should to study for the test.","You should study for the test.","should to","should","조동사 should 뒤에 to를 쓰지 않습니다.",pattern="to_insertion"),
+    Q("MODAL_OTHER","She must washes her face.","She must wash her face.","washes","wash","조동사 must 뒤에는 동사원형 wash를 써야 합니다.",pattern="base_verb_form"),
+    Q("MODAL_OTHER","He shoulds go to bed early.","He should go to bed early.","shoulds","should","조동사 should는 항상 should로 씁니다.",pattern="modal_conjugation"),
+    Q("MODAL_OTHER","You may to use my pen.","You may use my pen.","may to","may","조동사 may 뒤에 to를 쓰지 않습니다.",pattern="to_insertion"),
+    Q("MODAL_OTHER","They should to be quiet.","They should be quiet.","should to","should","조동사 should 뒤에 to를 쓰지 않습니다.",pattern="to_insertion"),
+    Q("MODAL_OTHER","She must goes home now.","She must go home now.","goes","go","조동사 must 뒤에는 동사원형 go를 써야 합니다.",pattern="base_verb_form"),
+    Q("MODAL_OTHER","He may plays outside after school.","He may play outside after school.","plays","play","조동사 may 뒤에는 동사원형 play를 써야 합니다.",pattern="base_verb_form"),
+    Q("MODAL_OTHER","He should goes to bed early.","He should go to bed early.","goes","go","조동사 should 뒤에는 동사원형 go를 써야 합니다.",pattern="base_verb_form"),
+    Q("MODAL_OTHER","You must cleans your room every day.","You must clean your room every day.","cleans","clean","조동사 must 뒤에는 동사원형 clean을 써야 합니다.",pattern="base_verb_form"),
+    Q("MODAL_OTHER","They should studies harder for the test.","They should study harder for the test.","studies","study","조동사 should 뒤에는 동사원형 study를 써야 합니다.",pattern="base_verb_form"),
+    Q("MODAL_OTHER","She may eats lunch soon.","She may eat lunch soon.","eats","eat","조동사 may 뒤에는 동사원형 eat을 써야 합니다.",pattern="base_verb_form"),
     # ── TENSE_PAST_REG ──────────────────────────────────────────────────────
     Q("TENSE_PAST_REG","She walk to school yesterday.","She walked to school yesterday.","walk","walked","과거 시제에서 규칙 동사는 -ed를 붙여야 합니다."),
     Q("TENSE_PAST_REG","He play soccer last Sunday.","He played soccer last Sunday.","play","played","과거 시제에서 규칙 동사 play에 -ed를 붙여 played로 씁니다."),
@@ -322,16 +348,16 @@ QUESTIONS = [
     Q("TENSE_PROG","They are swim in the river.","They are swimming in the river.","swim","swimming","현재진행형은 be동사 + -ing입니다. swim → swimming"),
     Q("TENSE_PROG","She is writeing a letter.","She is writing a letter.","writeing","writing","e로 끝나는 동사 write는 e를 빼고 -ing를 붙여 writing으로 씁니다."),
     # ── TENSE_FUTURE ────────────────────────────────────────────────────────
-    Q("TENSE_FUTURE","She will goes to the library tomorrow.","She will go to the library tomorrow.","goes","go","조동사 will 뒤에는 동사원형 go를 써야 합니다."),
-    Q("TENSE_FUTURE","He wills call you tonight.","He will call you tonight.","wills","will","조동사 will은 주어에 관계없이 항상 will입니다."),
-    Q("TENSE_FUTURE","They will to study together.","They will study together.","will to","will","조동사 will 뒤에 to를 쓰지 않습니다."),
-    Q("TENSE_FUTURE","Will she comes home early?","Will she come home early?","comes","come","Will 뒤에는 동사원형 come을 써야 합니다."),
-    Q("TENSE_FUTURE","I will not goes there alone.","I will not go there alone.","goes","go","will not 뒤에도 동사원형 go를 써야 합니다."),
-    Q("TENSE_FUTURE","She will to visit us next week.","She will visit us next week.","will to","will","조동사 will 뒤에 to를 쓰지 않습니다."),
-    Q("TENSE_FUTURE","He will plays basketball tomorrow.","He will play basketball tomorrow.","plays","play","조동사 will 뒤에는 동사원형 play를 써야 합니다."),
-    Q("TENSE_FUTURE","Will they to help us?","Will they help us?","to help","help","Will 뒤에 to를 쓰지 않고 바로 동사원형을 씁니다."),
-    Q("TENSE_FUTURE","She won't to come to school tomorrow.","She won't come to school tomorrow.","won't to","won't","won't 뒤에도 to를 쓰지 않고 동사원형만 씁니다."),
-    Q("TENSE_FUTURE","He will be studies hard.","He will study hard.","be studies","study","조동사 will 뒤에는 동사원형 study를 바로 씁니다."),
+    Q("TENSE_FUTURE","She will goes to the library tomorrow.","She will go to the library tomorrow.","goes","go","조동사 will 뒤에는 동사원형 go를 써야 합니다.",pattern="base_verb_form"),
+    Q("TENSE_FUTURE","He wills call you tonight.","He will call you tonight.","wills","will","조동사 will은 주어에 관계없이 항상 will입니다.",pattern="modal_conjugation"),
+    Q("TENSE_FUTURE","They will to study together.","They will study together.","will to","will","조동사 will 뒤에 to를 쓰지 않습니다.",pattern="to_insertion"),
+    Q("TENSE_FUTURE","Will she comes home early?","Will she come home early?","comes","come","Will 뒤에는 동사원형 come을 써야 합니다.",pattern="base_verb_form"),
+    Q("TENSE_FUTURE","I will not goes there alone.","I will not go there alone.","goes","go","will not 뒤에도 동사원형 go를 써야 합니다.",pattern="base_verb_form"),
+    Q("TENSE_FUTURE","She will to visit us next week.","She will visit us next week.","will to","will","조동사 will 뒤에 to를 쓰지 않습니다.",pattern="to_insertion"),
+    Q("TENSE_FUTURE","He will plays basketball tomorrow.","He will play basketball tomorrow.","plays","play","조동사 will 뒤에는 동사원형 play를 써야 합니다.",pattern="base_verb_form"),
+    Q("TENSE_FUTURE","Will they to help us?","Will they help us?","to help","help","Will 뒤에 to를 쓰지 않고 바로 동사원형을 씁니다.",pattern="to_insertion"),
+    Q("TENSE_FUTURE","She won't to come to school tomorrow.","She won't come to school tomorrow.","won't to","won't","won't 뒤에도 to를 쓰지 않고 동사원형만 씁니다.",pattern="to_insertion"),
+    Q("TENSE_FUTURE","He will be studies hard.","He will study hard.","be studies","study","조동사 will 뒤에는 동사원형 study를 바로 씁니다.",pattern="base_verb_form"),
     # ── TENSE_GOING ─────────────────────────────────────────────────────────
     Q("TENSE_GOING","She is going to goes shopping.","She is going to go shopping.","goes","go","be going to 뒤에는 동사원형 go를 써야 합니다."),
     Q("TENSE_GOING","He are going to visit Paris.","He is going to visit Paris.","are","is","주어 He는 단수이므로 is going to를 써야 합니다."),
@@ -357,18 +383,18 @@ QUESTIONS = [
     Q("NA_PLURAL","There are five mans in the office.","There are five men in the office.","mans","men","man의 복수형은 불규칙으로 men입니다."),
     Q("NA_PLURAL","He has three knifes.","He has three knives.","knifes","knives","knife의 복수형은 knives입니다."),
     # ── NA_ARTICLE ──────────────────────────────────────────────────────────
-    Q("NA_ARTICLE","She has a umbrella.","She has an umbrella.","a","an","모음(u) 소리로 시작하는 umbrella 앞에는 an을 씁니다."),
-    Q("NA_ARTICLE","He is an tall boy.","He is a tall boy.","an","a","자음(t) 소리로 시작하는 tall 앞에는 a를 씁니다."),
-    Q("NA_ARTICLE","I ate a apple this morning.","I ate an apple this morning.","a","an","모음(a) 소리로 시작하는 apple 앞에는 an을 씁니다."),
-    Q("NA_ARTICLE","She is an nurse at the hospital.","She is a nurse at the hospital.","an","a","자음(n) 소리로 시작하는 nurse 앞에는 a를 씁니다."),
-    Q("NA_ARTICLE","He has an book about science.","He has a book about science.","an","a","자음(b) 소리로 시작하는 book 앞에는 a를 씁니다."),
-    Q("NA_ARTICLE","I have a orange every day.","I have an orange every day.","a","an","모음(o) 소리로 시작하는 orange 앞에는 an을 씁니다."),
-    Q("NA_ARTICLE","She is a honest person.","She is an honest person.","a","an","honest는 h가 묵음이라 모음 소리로 시작하므로 an을 씁니다.","A2"),
-    Q("NA_ARTICLE","He plays a piano every day.","He plays the piano every day.","a","the","특정한 악기 이름 앞에는 the를 씁니다."),
-    Q("NA_ARTICLE","I go to a school by bus.","I go to school by bus.","a school","school","school 앞에는 관사를 쓰지 않습니다. (go to school 관용표현)"),
-    Q("NA_ARTICLE","Sun rises in the east.","The sun rises in the east.","Sun","The sun","세상에 하나뿐인 것(sun)에는 the를 씁니다."),
-    Q("NA_ARTICLE","She has an wonderful idea.","She has a wonderful idea.","an","a","자음(w) 소리로 시작하는 wonderful 앞에는 a를 씁니다."),
-    Q("NA_ARTICLE","I saw a elephant at the zoo.","I saw an elephant at the zoo.","a","an","모음(e) 소리로 시작하는 elephant 앞에는 an을 씁니다."),
+    Q("NA_ARTICLE","She has a umbrella.","She has an umbrella.","a","an","모음(u) 소리로 시작하는 umbrella 앞에는 an을 씁니다.",pattern="a_an_sound"),
+    Q("NA_ARTICLE","He is an tall boy.","He is a tall boy.","an","a","자음(t) 소리로 시작하는 tall 앞에는 a를 씁니다.",pattern="a_an_sound"),
+    Q("NA_ARTICLE","I ate a apple this morning.","I ate an apple this morning.","a","an","모음(a) 소리로 시작하는 apple 앞에는 an을 씁니다.",pattern="a_an_sound"),
+    Q("NA_ARTICLE","She is an nurse at the hospital.","She is a nurse at the hospital.","an","a","자음(n) 소리로 시작하는 nurse 앞에는 a를 씁니다.",pattern="a_an_sound"),
+    Q("NA_ARTICLE","He has an book about science.","He has a book about science.","an","a","자음(b) 소리로 시작하는 book 앞에는 a를 씁니다.",pattern="a_an_sound"),
+    Q("NA_ARTICLE","I have a orange every day.","I have an orange every day.","a","an","모음(o) 소리로 시작하는 orange 앞에는 an을 씁니다.",pattern="a_an_sound"),
+    Q("NA_ARTICLE","She is a honest person.","She is an honest person.","a","an","honest는 h가 묵음이라 모음 소리로 시작하므로 an을 씁니다.","A2",pattern="a_an_sound"),
+    Q("NA_ARTICLE","He plays a piano every day.","He plays the piano every day.","a","the","특정한 악기 이름 앞에는 the를 씁니다.",pattern="specific_instrument_the"),
+    Q("NA_ARTICLE","I go to a school by bus.","I go to school by bus.","a school","school","school 앞에는 관사를 쓰지 않습니다. (go to school 관용표현)",pattern="idiom_zero_article"),
+    Q("NA_ARTICLE","Sun rises in the east.","The sun rises in the east.","Sun","The sun","세상에 하나뿐인 것(sun)에는 the를 씁니다.",pattern="unique_noun_the"),
+    Q("NA_ARTICLE","She has an wonderful idea.","She has a wonderful idea.","an","a","자음(w) 소리로 시작하는 wonderful 앞에는 a를 씁니다.",pattern="a_an_sound"),
+    Q("NA_ARTICLE","I saw a elephant at the zoo.","I saw an elephant at the zoo.","a","an","모음(e) 소리로 시작하는 elephant 앞에는 an을 씁니다.",pattern="a_an_sound"),
     # ── NA_UNCOUNT ──────────────────────────────────────────────────────────
     Q("NA_UNCOUNT","I need two waters.","I need two glasses of water.","two waters","two glasses of water","water는 셀 수 없는 명사이므로 two waters라고 쓸 수 없습니다."),
     Q("NA_UNCOUNT","She gave me an advice.","She gave me advice.","an advice","advice","advice는 셀 수 없는 명사이므로 관사 an을 쓰지 않습니다."),
@@ -394,33 +420,36 @@ QUESTIONS = [
     Q("AA_ADJ_ADV","She looks tiredly.","She looks tired.","tiredly","tired","looks는 연결동사로 뒤에 형용사 tired를 씁니다."),
     Q("AA_ADJ_ADV","He is a kindly teacher.","He is a kind teacher.","kindly","kind","명사(teacher)를 수식하는 것은 형용사 kind입니다.","A2"),
     # ── AA_COMP ─────────────────────────────────────────────────────────────
-    Q("AA_COMP","She is more tall than her sister.","She is taller than her sister.","more tall","taller","1음절 형용사 tall의 비교급은 taller입니다. more를 쓰지 않습니다."),
-    Q("AA_COMP","He is more smart than Tom.","He is smarter than Tom.","more smart","smarter","1음절 형용사 smart의 비교급은 smarter입니다."),
-    Q("AA_COMP","This book is more cheap than that one.","This book is cheaper than that one.","more cheap","cheaper","1음절 형용사 cheap의 비교급은 cheaper입니다."),
-    Q("AA_COMP","She is more prettier than her friend.","She is prettier than her friend.","more prettier","prettier","이미 -er가 붙어 있으므로 more를 또 쓰면 안 됩니다."),
-    Q("AA_COMP","He is gooder at math than me.","He is better at math than me.","gooder","better","good의 비교급은 불규칙으로 better입니다."),
-    Q("AA_COMP","This is more easy than I thought.","This is easier than I thought.","more easy","easier","easy처럼 y로 끝나는 2음절 형용사는 -ier로 비교급을 만듭니다."),
-    Q("AA_COMP","She runs more fast than him.","She runs faster than him.","more fast","faster","1음절 형용사 fast의 비교급은 faster입니다."),
-    Q("AA_COMP","This bag is more heavier than that one.","This bag is heavier than that one.","more heavier","heavier","이미 -er가 있으므로 more를 또 쓰면 안 됩니다."),
-    Q("AA_COMP","He is more old than my dad.","He is older than my dad.","more old","older","1음절 형용사 old의 비교급은 older입니다."),
-    Q("AA_COMP","This is more bad than before.","This is worse than before.","more bad","worse","bad의 비교급은 불규칙으로 worse입니다.","A2"),
-    Q("AA_COMP","She is more kind than her sister.","She is kinder than her sister.","more kind","kinder","1음절 형용사 kind의 비교급은 kinder입니다. more를 쓰지 않습니다."),
-    Q("AA_COMP","He is more bigger than me.","He is bigger than me.","more bigger","bigger","이미 -er가 붙어 있으므로 more를 또 쓰지 않습니다."),
-    Q("AA_COMP","She is kinder as her sister.","She is kinder than her sister.","as","than","비교급 문장에서는 as가 아니라 than을 씁니다."),
-    Q("AA_COMP","He is smarter as Tom.","He is smarter than Tom.","as","than","비교급 문장에서는 as가 아니라 than을 씁니다."),
-    Q("AA_COMP","This book is cheaper as that one.","This book is cheaper than that one.","as","than","비교급 문장에서는 as가 아니라 than을 씁니다."),
-    Q("AA_COMP","He is older as his father.","He is older than his father.","as","than","비교급 문장에서는 as가 아니라 than을 씁니다."),
+    Q("AA_COMP","She is more tall than her sister.","She is taller than her sister.","more tall","taller","1음절 형용사 tall의 비교급은 taller입니다. more를 쓰지 않습니다.",pattern="more_er_redundant"),
+    Q("AA_COMP","He is more smart than Tom.","He is smarter than Tom.","more smart","smarter","1음절 형용사 smart의 비교급은 smarter입니다.",pattern="more_er_redundant"),
+    Q("AA_COMP","This book is more cheap than that one.","This book is cheaper than that one.","more cheap","cheaper","1음절 형용사 cheap의 비교급은 cheaper입니다.",pattern="more_er_redundant"),
+    Q("AA_COMP","She is more prettier than her friend.","She is prettier than her friend.","more prettier","prettier","이미 -er가 붙어 있으므로 more를 또 쓰면 안 됩니다.",pattern="double_comparative"),
+    Q("AA_COMP","He is gooder at math than me.","He is better at math than me.","gooder","better","good의 비교급은 불규칙으로 better입니다.",pattern="irregular_form"),
+    Q("AA_COMP","This is more easy than I thought.","This is easier than I thought.","more easy","easier","easy처럼 y로 끝나는 2음절 형용사는 -ier로 비교급을 만듭니다.",pattern="more_er_redundant"),
+    Q("AA_COMP","She runs more fast than him.","She runs faster than him.","more fast","faster","1음절 형용사 fast의 비교급은 faster입니다.",pattern="more_er_redundant"),
+    Q("AA_COMP","This bag is more heavier than that one.","This bag is heavier than that one.","more heavier","heavier","이미 -er가 있으므로 more를 또 쓰면 안 됩니다.",pattern="double_comparative"),
+    Q("AA_COMP","He is more old than my dad.","He is older than my dad.","more old","older","1음절 형용사 old의 비교급은 older입니다.",pattern="more_er_redundant"),
+    Q("AA_COMP","This is more bad than before.","This is worse than before.","more bad","worse","bad의 비교급은 불규칙으로 worse입니다.","A2",pattern="irregular_form"),
+    Q("AA_COMP","She is more kind than her sister.","She is kinder than her sister.","more kind","kinder","1음절 형용사 kind의 비교급은 kinder입니다. more를 쓰지 않습니다.",pattern="more_er_redundant"),
+    Q("AA_COMP","He is more bigger than me.","He is bigger than me.","more bigger","bigger","이미 -er가 붙어 있으므로 more를 또 쓰지 않습니다.",pattern="double_comparative"),
+    Q("AA_COMP","She is kinder as her sister.","She is kinder than her sister.","as","than","비교급 문장에서는 as가 아니라 than을 씁니다.",pattern="than_confusion"),
+    Q("AA_COMP","He is smarter as Tom.","He is smarter than Tom.","as","than","비교급 문장에서는 as가 아니라 than을 씁니다.",pattern="than_confusion"),
+    Q("AA_COMP","This book is cheaper as that one.","This book is cheaper than that one.","as","than","비교급 문장에서는 as가 아니라 than을 씁니다.",pattern="than_confusion"),
+    Q("AA_COMP","He is older as his father.","He is older than his father.","as","than","비교급 문장에서는 as가 아니라 than을 씁니다.",pattern="than_confusion"),
     # ── AA_SUPER ────────────────────────────────────────────────────────────
-    Q("AA_SUPER","She is the most tall girl in the class.","She is the tallest girl in the class.","most tall","tallest","1음절 형용사 tall의 최상급은 the tallest입니다."),
-    Q("AA_SUPER","He is the goodest player on the team.","He is the best player on the team.","goodest","best","good의 최상급은 불규칙으로 the best입니다."),
-    Q("AA_SUPER","This is the most cheap restaurant here.","This is the cheapest restaurant here.","most cheap","cheapest","1음절 형용사 cheap의 최상급은 cheapest입니다."),
-    Q("AA_SUPER","She is the most prettiest in her school.","She is the prettiest in her school.","most prettiest","prettiest","이미 -est가 있으므로 most를 또 쓰면 안 됩니다."),
-    Q("AA_SUPER","He is the most fast runner.","He is the fastest runner.","most fast","fastest","1음절 형용사 fast의 최상급은 fastest입니다."),
-    Q("AA_SUPER","This is the most easy quiz I've seen.","This is the easiest quiz I've seen.","most easy","easiest","easy의 최상급은 y를 i로 바꾸고 -est를 붙여 easiest로 씁니다.","A2"),
-    Q("AA_SUPER","She is the most old person here.","She is the oldest person here.","most old","oldest","1음절 형용사 old의 최상급은 oldest입니다."),
-    Q("AA_SUPER","He is the baddest student in class.","He is the worst student in class.","baddest","worst","bad의 최상급은 불규칙으로 the worst입니다.","A2"),
-    Q("AA_SUPER","This is most beautiful place I know.","This is the most beautiful place I know.","most beautiful","the most beautiful","최상급 앞에는 반드시 the를 씁니다."),
-    Q("AA_SUPER","She got the most high score.","She got the highest score.","most high","highest","1음절 형용사 high의 최상급은 highest입니다."),
+    Q("AA_SUPER","She is the most tall girl in the class.","She is the tallest girl in the class.","most tall","tallest","1음절 형용사 tall의 최상급은 the tallest입니다.",pattern="most_est_redundant"),
+    Q("AA_SUPER","He is the goodest player on the team.","He is the best player on the team.","goodest","best","good의 최상급은 불규칙으로 the best입니다.",pattern="irregular_form"),
+    Q("AA_SUPER","This is the most cheap restaurant here.","This is the cheapest restaurant here.","most cheap","cheapest","1음절 형용사 cheap의 최상급은 cheapest입니다.",pattern="most_est_redundant"),
+    Q("AA_SUPER","She is the most prettiest in her school.","She is the prettiest in her school.","most prettiest","prettiest","이미 -est가 있으므로 most를 또 쓰면 안 됩니다.",pattern="double_superlative"),
+    Q("AA_SUPER","He is the most fast runner.","He is the fastest runner.","most fast","fastest","1음절 형용사 fast의 최상급은 fastest입니다.",pattern="most_est_redundant"),
+    Q("AA_SUPER","This is the most easy quiz I've seen.","This is the easiest quiz I've seen.","most easy","easiest","easy의 최상급은 y를 i로 바꾸고 -est를 붙여 easiest로 씁니다.","A2",pattern="most_est_redundant"),
+    Q("AA_SUPER","She is the most old person here.","She is the oldest person here.","most old","oldest","1음절 형용사 old의 최상급은 oldest입니다.",pattern="most_est_redundant"),
+    Q("AA_SUPER","He is the baddest student in class.","He is the worst student in class.","baddest","worst","bad의 최상급은 불규칙으로 the worst입니다.","A2",pattern="irregular_form"),
+    Q("AA_SUPER","This is most beautiful place I know.","This is the most beautiful place I know.","most beautiful","the most beautiful","최상급 앞에는 반드시 the를 씁니다.",pattern="insert_the"),
+    Q("AA_SUPER","She got the most high score.","She got the highest score.","most high","highest","1음절 형용사 high의 최상급은 highest입니다.",pattern="most_est_redundant"),
+    Q("AA_SUPER","She is tallest girl in her class.","She is the tallest girl in her class.","tallest","the tallest","최상급 앞에는 반드시 the를 씁니다.",pattern="insert_the"),
+    Q("AA_SUPER","This was worst day of my life.","This was the worst day of my life.","worst","the worst","최상급 앞에는 반드시 the를 씁니다.",pattern="insert_the"),
+    Q("AA_SUPER","He got highest score in the class.","He got the highest score in the class.","highest","the highest","최상급 앞에는 반드시 the를 씁니다.",pattern="insert_the"),
     # ── PREP_PLACE ──────────────────────────────────────────────────────────
     Q("PREP_PLACE","The book is on the table.","The book is on the table.","","","","A1"),  # correct — placeholder fix below
     Q("PREP_PLACE","She is standing in front the school.","She is standing in front of the school.","in front","in front of","'~의 앞에'는 in front of입니다. of가 빠지면 안 됩니다."),
@@ -493,6 +522,158 @@ QUESTIONS = [
     Q("CONJ_SUB","She went to the park because it was raining.","She went to the park although it was raining.","because","although","비가 오는데도 공원에 간 것은 대조이므로 although를 씁니다."),
     Q("CONJ_SUB","I will buy the shoes when I save enough money.","I will buy the shoes if I save enough money.","when","if","돈을 모으는 것이 불확실한 조건이므로 when 대신 if를 씁니다.","A2"),
     Q("CONJ_SUB","She always calls me if she gets home.","She always calls me when she gets home.","if","when","집에 도착하면 항상 전화한다는 습관적 사실이므로 when을 씁니다.","A2"),
+
+    # ── AA_SUPER 추가 (most+est 중복 외 새 오류 유형) ─────────────────────────
+    Q("AA_SUPER","She is the taller girl in the class.","She is the tallest girl in the class.","taller","tallest","셋 이상을 비교하는 최상급 자리이므로 비교급 taller가 아니라 tallest를 써야 합니다.","A2",pattern="comparative_for_superlative"),
+    Q("AA_SUPER","This is the beautifulest place I have seen.","This is the most beautiful place I have seen.","beautifulest","most beautiful","3음절 이상인 beautiful은 -est를 붙이지 않고 most를 앞에 씁니다.","A2",pattern="long_adj_est_misuse"),
+    Q("AA_SUPER","This is the hotest day of the year.","This is the hottest day of the year.","hotest","hottest","단모음+단자음으로 끝나는 hot은 자음을 겹쳐 hottest로 씁니다.",pattern="consonant_doubling"),
+    Q("AA_SUPER","He is the thinest boy in class.","He is the thinnest boy in class.","thinest","thinnest","단모음+단자음으로 끝나는 thin은 자음을 겹쳐 thinnest로 씁니다.",pattern="consonant_doubling"),
+    Q("AA_SUPER","He is the tallest of the city.","He is the tallest in the city.","of the city","in the city","특정 장소·범위를 나타낼 때는 최상급 뒤에 in을 씁니다.","A2",pattern="preposition_choice"),
+    Q("AA_SUPER","She is one of the tallest girl in school.","She is one of the tallest girls in school.","girl","girls","'one of the + 최상급' 뒤에는 반드시 복수 명사를 씁니다.","A2",pattern="one_of_plural"),
+    Q("AA_SUPER","He is the young of his three sons.","He is the youngest of his three sons.","young","youngest","셋 이상 비교이므로 최상급 -est를 붙여 youngest로 써야 합니다.",pattern="est_omission"),
+    Q("AA_SUPER","This is my good friend in the world.","This is my best friend in the world.","good","best","세상에서 가장 좋은 친구라는 최상급 의미이므로 good이 아니라 best를 씁니다.",pattern="irregular_form"),
+
+    # ── AA_COMP 추가 (more+adj 중복 외 새 오류 유형) ─────────────────────────
+    Q("AA_COMP","She is tall than her sister.","She is taller than her sister.","tall","taller","비교급 문장이므로 원급 tall이 아니라 taller를 써야 합니다.",pattern="er_omission"),
+    Q("AA_COMP","She is the tallest than her sister.","She is taller than her sister.","the tallest","taller","둘을 비교하는 자리이므로 최상급이 아니라 비교급 taller를 써야 합니다.","A2",pattern="superlative_for_comparative"),
+    Q("AA_COMP","This bag is biger than that one.","This bag is bigger than that one.","biger","bigger","단모음+단자음으로 끝나는 big은 자음을 겹쳐 bigger로 씁니다.",pattern="consonant_doubling"),
+    Q("AA_COMP","She is happyer than before.","She is happier than before.","happyer","happier","y로 끝나는 happy는 y를 i로 바꾸고 -er을 붙여 happier로 씁니다.",pattern="y_to_ier"),
+    Q("AA_COMP","He runs faster then me.","He runs faster than me.","then","than","비교급에는 시간을 나타내는 then이 아니라 비교의 than을 씁니다.",pattern="than_then_spelling"),
+    Q("AA_COMP","This book is very more interesting than that one.","This book is much more interesting than that one.","very","much","비교급을 강조할 때는 very가 아니라 much/even/far 등을 씁니다.","A2",pattern="intensifier_choice"),
+
+    # ── NA_ARTICLE 추가 (a/an 발음 구분 외 새 오류 유형) ──────────────────────
+    Q("NA_ARTICLE","Moon is very bright tonight.","The moon is very bright tonight.","Moon","The moon","세상에 하나뿐인 것(moon)에는 the를 씁니다.",pattern="unique_noun_the"),
+    Q("NA_ARTICLE","She can play a violin.","She can play the violin.","a","the","악기 이름 앞에는 the를 씁니다.",pattern="specific_instrument_the"),
+    Q("NA_ARTICLE","I go to school by the bus.","I go to school by bus.","by the bus","by bus","교통수단을 나타낼 때 by 뒤에는 관사를 쓰지 않습니다.","A2",pattern="idiom_zero_article"),
+    Q("NA_ARTICLE","We have the breakfast at 7.","We have breakfast at 7.","the breakfast","breakfast","식사 이름(breakfast/lunch/dinner) 앞에는 보통 관사를 쓰지 않습니다.","A2",pattern="idiom_zero_article"),
+    Q("NA_ARTICLE","He hit me on a head.","He hit me on the head.","a","the","신체 부위를 가리킬 때는 관사 the를 씁니다.",pattern="body_part_the"),
+    Q("NA_ARTICLE","I want to visit United States.","I want to visit the United States.","United States","the United States","United States처럼 여러 주로 이루어진 나라 이름 앞에는 the를 씁니다.","A2",pattern="country_name_the"),
+
+    # ── MODAL_OTHER 추가 (to 삽입 오류 외 새 오류 유형) ───────────────────────
+    Q("MODAL_OTHER","You must not finish your homework today.","You don't have to finish your homework today.","must not","don't have to","'~할 필요 없다'는 뜻은 must not(금지)이 아니라 don't have to입니다.","A2",pattern="prohibition_vs_no_obligation"),
+    Q("MODAL_OTHER","You don't have to touch the hot stove.","You must not touch the hot stove.","don't have to","must not","'~하면 안 된다'는 금지의 뜻은 don't have to가 아니라 must not입니다.","A2",pattern="prohibition_vs_no_obligation"),
+    Q("MODAL_OTHER","She have to finish her work.","She has to finish her work.","have","has","주어 She는 3인칭 단수이므로 have to는 has to로 씁니다.",pattern="have_to_agreement"),
+    Q("MODAL_OTHER","He must go to the dentist yesterday.","He had to go to the dentist yesterday.","must","had to","must는 과거형이 없으므로 과거의 의무는 had to로 씁니다.","A2",pattern="must_no_past"),
+    Q("MODAL_OTHER","You had better to see a doctor.","You had better see a doctor.","had better to","had better","had better 뒤에도 to 없이 동사원형을 씁니다.","A2",pattern="to_insertion"),
+    Q("MODAL_OTHER","You ought go to bed early.","You ought to go to bed early.","ought go","ought to go","다른 조동사와 달리 ought 뒤에는 예외적으로 to를 씁니다.","A2",pattern="ought_to_exception"),
+
+    # ── TENSE_FUTURE 추가 (MODAL_WILL과 겹치지 않는 미래 표현 유형) ──────────
+    Q("TENSE_FUTURE","I am going to answer the phone.","I will answer the phone.","am going to answer","will answer","그 자리에서 즉흥적으로 결정한 일은 be going to가 아니라 will로 씁니다.","A2",pattern="will_vs_going_to"),
+    Q("TENSE_FUTURE","I will visit my grandma this weekend. I already bought the ticket.","I am going to visit my grandma this weekend. I already bought the ticket.","will visit","am going to visit","표를 미리 사둔 것처럼 이미 계획된 일은 will이 아니라 be going to로 씁니다.","A2",pattern="will_vs_going_to"),
+    Q("TENSE_FUTURE","She is meet her friend tomorrow.","She is meeting her friend tomorrow.","is meet","is meeting","이미 정해진 가까운 미래는 현재진행형으로도 나타낼 수 있습니다.","A2",pattern="present_continuous_future"),
+    Q("TENSE_FUTURE","I will go to Jeju last week.","I will go to Jeju next week.","last week","next week","will은 미래를 나타내므로 과거를 뜻하는 last week와 함께 쓸 수 없습니다.",pattern="future_time_word_logic"),
+    Q("TENSE_FUTURE","She go to the dentist tomorrow.","She will go to the dentist tomorrow.","go","will go","미래를 나타내는 tomorrow가 있으므로 현재형이 아니라 will go를 써야 합니다.",pattern="missing_future_marker"),
+    Q("TENSE_FUTURE","I will can help you tomorrow.","I will be able to help you tomorrow.","will can","will be able to","조동사 두 개를 나란히 쓸 수 없으므로 will can이 아니라 will be able to로 씁니다.","A2",pattern="modal_stacking"),
+
+    # ── NA_SOME_ANY ───────────────────────────────────────────────────────────
+    Q("NA_SOME_ANY","I don't have some money.","I don't have any money.","some","any","부정문에는 some 대신 any를 씁니다.",pattern="negative_any"),
+    Q("NA_SOME_ANY","Do you have some questions?","Do you have any questions?","some","any","의문문에는 some 대신 any를 씁니다.",pattern="question_any"),
+    Q("NA_SOME_ANY","She has any brothers.","She has some brothers.","any","some","긍정문에는 any 대신 some을 씁니다.",pattern="positive_some"),
+    Q("NA_SOME_ANY","There isn't some milk in the fridge.","There isn't any milk in the fridge.","some","any","부정문에는 some 대신 any를 씁니다.",pattern="negative_any"),
+    Q("NA_SOME_ANY","I have any good ideas.","I have some good ideas.","any","some","긍정문에는 any 대신 some을 씁니다.",pattern="positive_some"),
+    Q("NA_SOME_ANY","We don't need some help.","We don't need any help.","some","any","부정문에는 some 대신 any를 씁니다.",pattern="negative_any"),
+    Q("NA_SOME_ANY","Are there some cookies left?","Are there any cookies left?","some","any","의문문에는 some 대신 any를 씁니다.","A2",pattern="question_any"),
+    Q("NA_SOME_ANY","Can I have any water, please?","Can I have some water, please?","any","some","상대방이 yes라고 대답할 것을 기대하는 권유·요청 의문문에는 예외적으로 some을 씁니다.","A2",pattern="request_some_exception"),
+
+    # ── BE_THERE ──────────────────────────────────────────────────────────────
+    Q("BE_THERE","There is many books on the desk.","There are many books on the desk.","is","are","books가 복수이므로 There are를 써야 합니다.",pattern="there_be_agreement"),
+    Q("BE_THERE","There are a cat under the table.","There is a cat under the table.","are","is","a cat은 단수이므로 There is를 써야 합니다.",pattern="there_be_agreement"),
+    Q("BE_THERE","There is two pencils in my bag.","There are two pencils in my bag.","is","are","two pencils는 복수이므로 There are를 써야 합니다.",pattern="there_be_agreement"),
+    Q("BE_THERE","There are an apple on the plate.","There is an apple on the plate.","are","is","an apple은 단수이므로 There is를 써야 합니다.",pattern="there_be_agreement"),
+    Q("BE_THERE","Is there some students in the room?","Are there some students in the room?","Is","Are","students가 복수이므로 Are there를 써야 합니다.","A2",pattern="there_be_agreement"),
+    Q("BE_THERE","There isn't any chairs here.","There aren't any chairs here.","isn't","aren't","chairs가 복수이므로 aren't를 써야 합니다.",pattern="there_be_negative_agreement"),
+    Q("BE_THERE","There is a lot of people at the concert.","There are a lot of people at the concert.","is","are","people은 복수 취급하므로 There are를 써야 합니다.","A2",pattern="there_be_agreement"),
+    Q("BE_THERE","Are there much water in the bottle?","Is there much water in the bottle?","Are","Is","water는 셀 수 없는 명사로 단수 취급하므로 Is there를 써야 합니다.","A2",pattern="there_be_uncountable"),
+
+    # ── PRON_OBJ ──────────────────────────────────────────────────────────────
+    Q("PRON_OBJ","She likes I very much.","She likes me very much.","I","me","동사의 목적어 자리이므로 주격 I가 아니라 목적격 me를 씁니다.",pattern="verb_object_pronoun"),
+    Q("PRON_OBJ","Please give he the book.","Please give him the book.","he","him","목적어 자리이므로 주격 he가 아니라 목적격 him을 씁니다.",pattern="verb_object_pronoun"),
+    Q("PRON_OBJ","I will call she tomorrow.","I will call her tomorrow.","she","her","목적어 자리이므로 주격 she가 아니라 목적격 her를 씁니다.",pattern="verb_object_pronoun"),
+    Q("PRON_OBJ","They invited we to the party.","They invited us to the party.","we","us","목적어 자리이므로 주격 we가 아니라 목적격 us를 씁니다.",pattern="verb_object_pronoun"),
+    Q("PRON_OBJ","Can you help they?","Can you help them?","they","them","목적어 자리이므로 주격 they가 아니라 목적격 them을 씁니다.",pattern="verb_object_pronoun"),
+    Q("PRON_OBJ","This present is for I.","This present is for me.","I","me","전치사(for) 뒤에는 목적격 me를 씁니다.",pattern="preposition_object_pronoun"),
+    Q("PRON_OBJ","My mom made a cake for he.","My mom made a cake for him.","he","him","전치사(for) 뒤에는 목적격 him을 씁니다.",pattern="preposition_object_pronoun"),
+    Q("PRON_OBJ","Look at they over there.","Look at them over there.","they","them","전치사(at) 뒤에는 목적격 them을 씁니다.",pattern="preposition_object_pronoun"),
+
+    # ── PRON_POSS ─────────────────────────────────────────────────────────────
+    Q("PRON_POSS","This is my's book.","This is my book.","my's","my","소유격 my 뒤에는 's를 붙이지 않습니다.",pattern="possessive_no_apostrophe_s"),
+    Q("PRON_POSS","That bag is her.","That bag is hers.","her","hers","명사 없이 단독으로 쓰일 때는 소유격 her가 아니라 소유대명사 hers를 씁니다.",pattern="possessive_pronoun_standalone"),
+    Q("PRON_POSS","Is this pencil you?","Is this pencil yours?","you","yours","'너의 것'이라는 뜻은 you가 아니라 소유대명사 yours입니다.",pattern="possessive_pronoun_standalone"),
+    Q("PRON_POSS","This is I book.","This is my book.","I","my","명사(book) 앞에는 주격 I가 아니라 소유격 my를 씁니다.",pattern="possessive_adjective_before_noun"),
+    Q("PRON_POSS","The red car is our.","The red car is ours.","our","ours","명사 없이 단독으로 쓰일 때는 소유격 our가 아니라 소유대명사 ours를 씁니다.",pattern="possessive_pronoun_standalone"),
+    Q("PRON_POSS","Their's house is very big.","Their house is very big.","Their's","Their","소유격 their에는 's를 붙이지 않습니다.",pattern="possessive_no_apostrophe_s"),
+    Q("PRON_POSS","This is not my pen. It's you.","This is not my pen. It's yours.","you","yours","'너의 것'이라는 뜻은 소유대명사 yours로 씁니다.",pattern="possessive_pronoun_standalone"),
+    Q("PRON_POSS","He book is on the desk.","His book is on the desk.","He","His","명사(book) 앞에는 주격 He가 아니라 소유격 His를 씁니다.",pattern="possessive_adjective_before_noun"),
+
+    # ── PP_FORM ───────────────────────────────────────────────────────────────
+    Q("PP_FORM","She have finished her homework.","She has finished her homework.","have","has","주어 She는 3인칭 단수이므로 have가 아니라 has를 씁니다.",pattern="have_has_agreement"),
+    Q("PP_FORM","I has seen that movie before.","I have seen that movie before.","has","have","주어 I에는 has가 아니라 have를 씁니다.",pattern="have_has_agreement"),
+    Q("PP_FORM","He has went to Busan.","He has gone to Busan.","went","gone","go의 과거분사는 went가 아니라 gone입니다.","A2",pattern="irregular_participle"),
+    Q("PP_FORM","They have ate lunch already.","They have eaten lunch already.","ate","eaten","eat의 과거분사는 ate가 아니라 eaten입니다.","A2",pattern="irregular_participle"),
+    Q("PP_FORM","She has wrote three letters.","She has written three letters.","wrote","written","write의 과거분사는 wrote가 아니라 written입니다.","A2",pattern="irregular_participle"),
+    Q("PP_FORM","I have saw this place before.","I have seen this place before.","saw","seen","see의 과거분사는 saw가 아니라 seen입니다.","A2",pattern="irregular_participle"),
+    Q("PP_FORM","We has lived here for ten years.","We have lived here for ten years.","has","have","주어 We는 복수이므로 has가 아니라 have를 씁니다.",pattern="have_has_agreement"),
+    Q("PP_FORM","He have broken his leg.","He has broken his leg.","have","has","주어 He는 3인칭 단수이므로 have가 아니라 has를 씁니다.",pattern="have_has_agreement"),
+
+    # ── PP_ADV ────────────────────────────────────────────────────────────────
+    Q("PP_ADV","I have lived here for 2010.","I have lived here since 2010.","for","since","특정 시점을 나타낼 때는 for가 아니라 since를 씁니다.","A2",pattern="since_for_confusion"),
+    Q("PP_ADV","She has studied English since three years.","She has studied English for three years.","since","for","기간을 나타낼 때는 since가 아니라 for를 씁니다.","A2",pattern="since_for_confusion"),
+    Q("PP_ADV","He hasn't finished his homework already.","He hasn't finished his homework yet.","already","yet","부정문에는 already가 아니라 yet을 씁니다.","A2",pattern="already_yet_confusion"),
+    Q("PP_ADV","I have yet finished my project.","I have already finished my project.","yet","already","긍정문에는 yet이 아니라 already를 씁니다.","A2",pattern="already_yet_confusion"),
+    Q("PP_ADV","Have you yet been to Jeju Island?","Have you ever been to Jeju Island?","yet","ever","경험을 물을 때는 yet이 아니라 ever를 씁니다.","A2",pattern="ever_never_confusion"),
+    Q("PP_ADV","I have ever been to Japan.","I have never been to Japan.","ever","never","경험이 없다는 부정의 뜻은 ever가 아니라 never로 씁니다.","A2",pattern="ever_never_confusion"),
+    Q("PP_ADV","She has lived in Seoul for she was born.","She has lived in Seoul since she was born.","for","since","절(she was born) 앞에는 for가 아니라 since를 씁니다.","A2",pattern="since_for_confusion"),
+    Q("PP_ADV","I haven't seen her since two weeks.","I haven't seen her for two weeks.","since","for","기간을 나타낼 때는 since가 아니라 for를 씁니다.","A2",pattern="since_for_confusion"),
+
+    # ── IG_TO ─────────────────────────────────────────────────────────────────
+    Q("IG_TO","I want going to the park.","I want to go to the park.","going","to go","want 뒤에는 동명사가 아니라 to부정사를 씁니다.",pattern="infinitive_verb_pattern"),
+    Q("IG_TO","She decided studying abroad.","She decided to study abroad.","studying","to study","decide 뒤에는 동명사가 아니라 to부정사를 씁니다.",pattern="infinitive_verb_pattern"),
+    Q("IG_TO","He hopes passing the exam.","He hopes to pass the exam.","passing","to pass","hope 뒤에는 동명사가 아니라 to부정사를 씁니다.",pattern="infinitive_verb_pattern"),
+    Q("IG_TO","They planned visiting Jeju Island.","They planned to visit Jeju Island.","visiting","to visit","plan 뒤에는 동명사가 아니라 to부정사를 씁니다.",pattern="infinitive_verb_pattern"),
+    Q("IG_TO","I need finishing this today.","I need to finish this today.","finishing","to finish","need 뒤에는 동명사가 아니라 to부정사를 씁니다.",pattern="infinitive_verb_pattern"),
+    Q("IG_TO","She promised calling me tonight.","She promised to call me tonight.","calling","to call","promise 뒤에는 동명사가 아니라 to부정사를 씁니다.",pattern="infinitive_verb_pattern"),
+    Q("IG_TO","We wish seeing you again.","We wish to see you again.","seeing","to see","wish 뒤에는 동명사가 아니라 to부정사를 씁니다.",pattern="infinitive_verb_pattern"),
+    Q("IG_TO","He wants playing soccer after school.","He wants to play soccer after school.","playing","to play","want 뒤에는 동명사가 아니라 to부정사를 씁니다.",pattern="infinitive_verb_pattern"),
+
+    # ── IG_GERUND ─────────────────────────────────────────────────────────────
+    Q("IG_GERUND","I enjoy to swim in the sea.","I enjoy swimming in the sea.","to swim","swimming","enjoy 뒤에는 to부정사가 아니라 동명사를 씁니다.",pattern="gerund_verb_pattern"),
+    Q("IG_GERUND","She finished to write the report.","She finished writing the report.","to write","writing","finish 뒤에는 to부정사가 아니라 동명사를 씁니다.",pattern="gerund_verb_pattern"),
+    Q("IG_GERUND","He avoids to eat junk food.","He avoids eating junk food.","to eat","eating","avoid 뒤에는 to부정사가 아니라 동명사를 씁니다.",pattern="gerund_verb_pattern"),
+    Q("IG_GERUND","Do you mind to open the window?","Do you mind opening the window?","to open","opening","mind 뒤에는 to부정사가 아니라 동명사를 씁니다.","A2",pattern="gerund_verb_pattern"),
+    Q("IG_GERUND","They gave up to look for the dog.","They gave up looking for the dog.","to look","looking","give up 뒤에는 to부정사가 아니라 동명사를 씁니다.","A2",pattern="gerund_verb_pattern"),
+    Q("IG_GERUND","She keeps to ask the same question.","She keeps asking the same question.","to ask","asking","keep 뒤에는 to부정사가 아니라 동명사를 씁니다.","A2",pattern="gerund_verb_pattern"),
+    Q("IG_GERUND","We practice to speak English every day.","We practice speaking English every day.","to speak","speaking","practice 뒤에는 to부정사가 아니라 동명사를 씁니다.",pattern="gerund_verb_pattern"),
+    Q("IG_GERUND","He finished to clean his room.","He finished cleaning his room.","to clean","cleaning","finish 뒤에는 to부정사가 아니라 동명사를 씁니다.",pattern="gerund_verb_pattern"),
+
+    # ── PASS_FORM ─────────────────────────────────────────────────────────────
+    Q("PASS_FORM","The window was break by the storm.","The window was broken by the storm.","break","broken","수동태는 be동사 + 과거분사이므로 break가 아니라 broken을 씁니다.",pattern="pp_form_error"),
+    Q("PASS_FORM","This book was wrote by a famous author.","This book was written by a famous author.","wrote","written","수동태는 be동사 + 과거분사이므로 wrote가 아니라 written을 씁니다.",pattern="pp_form_error"),
+    Q("PASS_FORM","The cake was made by she.","The cake was made by her.","she","her","by 뒤에는 주격 she가 아니라 목적격 her를 씁니다.",pattern="by_pronoun_case"),
+    Q("PASS_FORM","The letter is send every week.","The letter is sent every week.","send","sent","수동태는 be동사 + 과거분사이므로 send가 아니라 sent를 씁니다.",pattern="pp_form_error"),
+    Q("PASS_FORM","These cookies was baked by my mom.","These cookies were baked by my mom.","was","were","주어 cookies는 복수이므로 was가 아니라 were를 씁니다.",pattern="pass_be_agreement"),
+    Q("PASS_FORM","The room is cleaning every day.","The room is cleaned every day.","cleaning","cleaned","수동태는 be동사 + 과거분사이므로 -ing가 아니라 cleaned를 씁니다.","A2",pattern="pass_ing_vs_pp"),
+    Q("PASS_FORM","The movie was watch by millions of people.","The movie was watched by millions of people.","watch","watched","수동태는 be동사 + 과거분사이므로 watch가 아니라 watched를 씁니다.",pattern="pp_form_error"),
+    Q("PASS_FORM","English is speak in many countries.","English is spoken in many countries.","speak","spoken","수동태는 be동사 + 과거분사이므로 speak가 아니라 spoken을 씁니다.","A2",pattern="pp_form_error"),
+
+    # ── PASS_BY ───────────────────────────────────────────────────────────────
+    Q("PASS_BY","The picture was painted from Picasso.","The picture was painted by Picasso.","from","by","수동태의 행위자 앞에는 from이 아니라 by를 씁니다.",pattern="wrong_preposition_for_agent"),
+    Q("PASS_BY","The song was sung with her.","The song was sung by her.","with","by","수동태의 행위자 앞에는 with가 아니라 by를 씁니다.",pattern="wrong_preposition_for_agent"),
+    Q("PASS_BY","This bridge was built by in 1900.","This bridge was built in 1900.","by in 1900","in 1900","시점을 나타내는 표현 앞에는 by를 쓰지 않습니다.","A2",pattern="by_before_time_error"),
+    Q("PASS_BY","The cake was eaten of the children.","The cake was eaten by the children.","of","by","수동태의 행위자 앞에는 of가 아니라 by를 씁니다.",pattern="wrong_preposition_for_agent"),
+    Q("PASS_BY","The report was written for him.","The report was written by him.","for","by","수동태의 행위자 앞에는 for가 아니라 by를 씁니다.",pattern="wrong_preposition_for_agent"),
+    Q("PASS_BY","The trash was thrown away for the wind.","The trash was thrown away by the wind.","for","by","수동태의 행위자 앞에는 for가 아니라 by를 씁니다.",pattern="wrong_preposition_for_agent"),
+    Q("PASS_BY","The car was fixed with the mechanic.","The car was fixed by the mechanic.","with","by","수동태의 행위자 앞에는 with가 아니라 by를 씁니다.",pattern="wrong_preposition_for_agent"),
+    Q("PASS_BY","This novel was written at a young writer.","This novel was written by a young writer.","at","by","수동태의 행위자 앞에는 at이 아니라 by를 씁니다.",pattern="wrong_preposition_for_agent"),
+
+    # ── REL_CHOICE ────────────────────────────────────────────────────────────
+    Q("REL_CHOICE","I have a friend which lives in Busan.","I have a friend who lives in Busan.","which","who","선행사가 사람(friend)이므로 which가 아니라 who를 씁니다.",pattern="who_which_antecedent"),
+    Q("REL_CHOICE","She has a dog who is very smart.","She has a dog which is very smart.","who","which","선행사가 동물(dog)이므로 who가 아니라 which를 씁니다.",pattern="who_which_antecedent"),
+    Q("REL_CHOICE","This is the book who I bought yesterday.","This is the book which I bought yesterday.","who","which","선행사가 사물(book)이므로 who가 아니라 which를 씁니다.",pattern="who_which_antecedent"),
+    Q("REL_CHOICE","The man which called you is my uncle.","The man who called you is my uncle.","which","who","선행사가 사람(man)이므로 which가 아니라 who를 씁니다.",pattern="who_which_antecedent"),
+    Q("REL_CHOICE","I know a girl which can speak three languages.","I know a girl who can speak three languages.","which","who","선행사가 사람(girl)이므로 which가 아니라 who를 씁니다.",pattern="who_which_antecedent"),
+    Q("REL_CHOICE","The car who is parked outside is mine.","The car which is parked outside is mine.","who","which","선행사가 사물(car)이므로 who가 아니라 which를 씁니다.",pattern="who_which_antecedent"),
+    Q("REL_CHOICE","The teacher which taught us math retired.","The teacher who taught us math retired.","which","who","선행사가 사람(teacher)이므로 which가 아니라 who를 씁니다.",pattern="who_which_antecedent"),
+    Q("REL_CHOICE","This is the pen who I lost.","This is the pen which I lost.","who","which","선행사가 사물(pen)이므로 who가 아니라 which를 씁니다.",pattern="who_which_antecedent"),
 ]
 
 # Remove placeholder Q entries (where error_word and correct_word are empty)

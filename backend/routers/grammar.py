@@ -18,19 +18,26 @@ _DO_FORMS = ["do", "does", "don't", "doesn't", "did", "didn't"]
 _MODAL_FORMS = ["can", "can't", "will", "won't", "may", "must", "should", "could"]
 
 
-def _generate_mcq(q: GrammarQuestion) -> list[str]:
+def _generate_mcq(q: GrammarQuestion, db: Session) -> list[str]:
     code = q.category_code
     correct = q.correct_word
     wrong = q.error_word
 
-    if code in ("BE_AGREEMENT", "BE_NEGATIVE", "BE_QUESTION", "INT_WH_BE", "TENSE_GOING"):
+    if code in ("BE_AGREEMENT", "BE_NEGATIVE", "BE_QUESTION", "INT_WH_BE", "TENSE_GOING", "BE_THERE"):
         pool = _BE_FORMS
     elif code in ("GV_THIRD", "GV_NEGATIVE", "GV_QUESTION", "INT_WH_DO", "INT_WH_ADJ"):
         pool = _DO_FORMS
     elif code in ("MODAL_CAN", "MODAL_WILL", "MODAL_OTHER"):
         pool = _MODAL_FORMS
     else:
-        pool = []
+        # No hardcoded pool for this category — build distractors from other
+        # questions' word forms in the same category instead of leaving MCQ
+        # with only 2 real options.
+        siblings = db.query(GrammarQuestion).filter(
+            GrammarQuestion.category_code == code,
+            GrammarQuestion.id != q.id,
+        ).all()
+        pool = list({s.correct_word for s in siblings} | {s.error_word for s in siblings})
 
     distractors = [w for w in pool if w != correct and w != wrong]
     random.shuffle(distractors)
@@ -48,6 +55,37 @@ def _generate_mcq(q: GrammarQuestion) -> list[str]:
 
 
 # ── Schemas ──────────────────────────────────────────────────────────────────
+
+def _diverse_sample(qs: list[GrammarQuestion], count: int) -> list[GrammarQuestion]:
+    """Pick `count` questions favoring one-per-pattern_tag before ever repeating
+    a pattern, so a single quiz doesn't end up dominated by one error type
+    (e.g. several "most+est" superlative questions back to back). Questions
+    without a pattern_tag are each treated as their own unique pattern, so
+    untagged categories behave exactly like plain random sampling."""
+    count = min(count, len(qs))
+    pool = list(qs)
+    random.shuffle(pool)
+
+    groups: dict[str, list[GrammarQuestion]] = {}
+    for q in pool:
+        key = q.pattern_tag or f"__untagged_{q.id}"
+        groups.setdefault(key, []).append(q)
+    group_keys = list(groups.keys())
+    random.shuffle(group_keys)
+
+    selected: list[GrammarQuestion] = []
+    while len(selected) < count:
+        progressed = False
+        for key in group_keys:
+            if len(selected) >= count:
+                break
+            if groups[key]:
+                selected.append(groups[key].pop(0))
+                progressed = True
+        if not progressed:
+            break
+    return selected
+
 
 class QuestionOut(BaseModel):
     id: int
@@ -135,11 +173,11 @@ def generate_quiz(body: QuizGenerate, db: Session = Depends(get_db)):
             GrammarQuestion.category_code.in_(body.category_codes)
         ).all()
 
-    selected = random.sample(qs, min(body.count, len(qs)))
+    selected = _diverse_sample(qs, body.count)
 
     result = []
     for q in selected:
-        opts = _generate_mcq(q) if body.mcq else None
+        opts = _generate_mcq(q, db) if body.mcq else None
         result.append({
             "id": q.id,
             "category_code": q.category_code,
